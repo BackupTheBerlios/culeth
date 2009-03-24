@@ -1,0 +1,8 @@
+#!/bin/sh
+#
+# this is a shorthand for
+# - erasing CUL
+# - flashing the new firmware
+# - restarting CUL
+#
+dfu-programmer at90usb162 erase && dfu-programmer at90usb162 flash CULeth.hex && dfu-programmer at90usb162 start

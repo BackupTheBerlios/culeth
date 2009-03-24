@@ -1,0 +1,59 @@
+
+Rationale
+=========
+
+CULeth is intended to make CUL an ethernet router. CUL is to pass ethernet II
+frames between a PC and CC11xx transceiver based devices such as Betty with Boop
+firmware (see http://www.bettyhacks.com).
+
+On USB, CUL appears as an ethernet adapter with a proper IP address. On
+air, CUL appears as another ethernet adapter. CUL is able to receive and send
+ethernet frames on air via the built-in CC1101 chip. It can communicate with
+other devices that have appropriate firmware, such as another CUL or a properly
+updated Betty. For Betty, CUL is transparent. Betty sends ethernet frames to the
+host's IP adress via CUL's air ethernet adapter acting as gateway. CUL passes
+the frames to the host. CUL is completely agnostic of the higher level protocols
+used in the ethernet frames it passes from Betty to host hither and yon.
+
++---------+             +--------------------+      +---------+
+| Betty 1 |    on air   |        CULeth      | USB  |   host  |
+| 10.0.1.1|- - - - - - -| 10.0.1.1  10.0.0.1 |------|         |
+|         |             |                    |      |         |
++---------+             +--------------------+      +---------+
+
+CUL contains a simple telnet server. If CUL is directly addressed via its IP
+address, the host can communicate with CUL to read and change a few settings.
+
+CULeth is a derivative of the RNDISEthernet demo from LUFA (see
+http://www.fourwalledcubicle.com/LUFA.php).
+
+
+Install / Flash the firmware
+============================
+
+1. Change into the source directory
+2. Insert the USB-Stick while pressing the micro-switch.
+
+   A USB device "03eb:2ffa Atmel Corp." should appear.
+
+    dfu-programmer at90usb162 erase
+    dfu-programmer at90usb162 flash CULeth.hex
+    Validating...
+    6312 bytes used (51.37%)
+    dfu-programmer at90usb162 start
+
+  The last command will reset the device, a new USB device should appear:
+  "03eb:204b Atmel Corp."
+  Then reinsert the CUL without pressing the micro-switch.
+
+Tips & Tricks
+=============
+openSuSE 11.x:
+
+If you want to program CUL without the need to become root, add new file
+
+69-cul.rules
+
+in the directory /etc/udev/rules.d/ with the following contents:
+
+SYSFS{idVendor}=="03eb", SYSFS{idProduct}=="2ffa", BUS=="usb", MODE="0666"
