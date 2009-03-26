@@ -36,18 +36,12 @@
 
 #include "CULeth.h"
 
-/* Project Tags, for reading out using the ButtLoad project */
-BUTTLOADTAG(ProjName,    "LUFA RNDIS App");
-BUTTLOADTAG(BuildTime,   __TIME__);
-BUTTLOADTAG(BuildDate,   __DATE__);
-BUTTLOADTAG(LUFAVersion, "LUFA V" LUFA_VERSION_STRING);
 
 /* Scheduler Task List */
 TASK_LIST
 {
 	{ Task: USB_USBTask          , TaskStatus: TASK_STOP },
 	{ Task: Ethernet_Task        , TaskStatus: TASK_STOP },
-//	{ Task: TCP_Task             , TaskStatus: TASK_STOP },
 	{ Task: RNDIS_Task           , TaskStatus: TASK_STOP },
 };
 
@@ -65,14 +59,7 @@ int main(void)
 
 	/* Hardware Initialization */
 	LED_Init();
-        LED_ON();
 	SerialStream_Init(9600, false);
-
-	/* Webserver Initialization */
-	//TCP_Init();
-	//Webserver_Init();
-
-	//printf_P(PSTR("\r\n\r\n****** RNDIS Demo running. ******\r\n"));
 
 	/* Indicate USB not ready */
 	UpdateStatus(Status_USBNotReady);
@@ -107,7 +94,6 @@ EVENT_HANDLER(USB_Disconnect)
 	/* Stop running TCP/IP and USB management tasks */
 	Scheduler_SetTaskMode(RNDIS_Task, TASK_STOP);
 	Scheduler_SetTaskMode(Ethernet_Task, TASK_STOP);
-//	Scheduler_SetTaskMode(TCP_Task, TASK_STOP);
 	Scheduler_SetTaskMode(USB_USBTask, TASK_STOP);
 
 	/* Indicate USB not ready */
@@ -138,7 +124,6 @@ EVENT_HANDLER(USB_ConfigurationChanged)
 	/* Start TCP/IP tasks */
 	Scheduler_SetTaskMode(RNDIS_Task, TASK_RUN);
 	Scheduler_SetTaskMode(Ethernet_Task, TASK_RUN);
-//	Scheduler_SetTaskMode(TCP_Task, TASK_RUN);
 }
 
 /** Event handler for the USB_UnhandledControlPacket event. This is used to catch standard and class specific

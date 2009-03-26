@@ -42,7 +42,6 @@
 
 		#include "EthernetProtocols.h"
 		#include "Ethernet.h"
-		//#include "ProtocolDecoders.h"
 
 	/* Macros: */
 		/** Protocol IP address of the host (client) machine, once assigned by DHCP */

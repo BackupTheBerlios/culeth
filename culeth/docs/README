@@ -2,27 +2,37 @@
 Rationale
 =========
 
-CULeth is intended to make CUL an ethernet router. CUL is to pass ethernet II
+CULeth is intended to make CUL an ethernet hub. CUL is to pass ethernet II
 frames between a PC and CC11xx transceiver based devices such as Betty with Boop
 firmware (see http://www.bettyhacks.com).
 
-On USB, CUL appears as an ethernet adapter with a proper IP address. On
-air, CUL appears as another ethernet adapter. CUL is able to receive and send
-ethernet frames on air via the built-in CC1101 chip. It can communicate with
-other devices that have appropriate firmware, such as another CUL or a properly
-updated Betty. For Betty, CUL is transparent. Betty sends ethernet frames to the
-host's IP adress via CUL's air ethernet adapter acting as gateway. CUL passes
-the frames to the host. CUL is completely agnostic of the higher level protocols
-used in the ethernet frames it passes from Betty to host hither and yon.
+On USB, CUL appears on the host as an ethernet adapter with a proper IP address.
+The IP address is 10.0.0.xxx. This is the host's IP address.
 
-+---------+             +--------------------+      +---------+
-| Betty 1 |    on air   |        CULeth      | USB  |   host  |
-| 10.0.1.1|- - - - - - -| 10.0.1.1  10.0.0.1 |------|         |
-|         |             |                    |      |         |
-+---------+             +--------------------+      +---------+
+Packages from the host with a destination in the subnet 10.0.0.0/255.0.0.0 pass
+through that interface and are transmitted to air. Packages from the air are
+send via the CUL interface to the host. CUL is completely agnostic of the higher
+level protocols used in the ethernet frames it passes from Betty to host hither
+and yon.
 
-CUL contains a simple telnet server. If CUL is directly addressed via its IP
-address, the host can communicate with CUL to read and change a few settings.
+As a gimmick, CULeth simulates a simple host with the following features:
+- answer ARP requests
+- support ICMP ping echos
+
+
++-----------+             +--------------------+      +---------+
+| Betty 1   |    on air   |                    |      |  host   |
+| 10.0.0.11 |- - - - - - -|         hub        |------|10.0.0.1 |
+|           |             |                    |      |  usb0   |
++-----------+             +----------+---------+      +---------+
+                                     |
+                                     |
+                                +----+----+
+                                |  CULeth |
+                                |10.0.0.2 |
+                                |         |
+                                +---------+
+
 
 CULeth is a derivative of the RNDISEthernet demo from LUFA (see
 http://www.fourwalledcubicle.com/LUFA.php).
@@ -43,8 +53,41 @@ Install / Flash the firmware
     dfu-programmer at90usb162 start
 
   The last command will reset the device, a new USB device should appear:
-  "03eb:204b Atmel Corp."
-  Then reinsert the CUL without pressing the micro-switch.
+  "03eb:204c Atmel Corp."
+
+
+For convenience, the above command sequence is scripted in the executable
+tools/flash.
+
+If all is fine, the logs will show a new usb device (use dmesg):
+
+usb 1-9: new full speed USB device using ohci_hcd and address 98
+usb 1-9: configuration #1 chosen from 1 choice
+rndis_host 1-9:1.0: dev can't take 144 byte packets (max 144), adjusting MTU to 86
+rndis_host 1-9:1.0: RNDIS_MSG_QUERY(0x00010202) failed, -47
+usb0: register 'rndis_host' at usb-0000:00:0b.0-9, RNDIS device, 02:00:02:00:02:00
+usb 1-9: New USB device found, idVendor=03eb, idProduct=204c
+usb 1-9: New USB device strings: Mfr=1, Product=2, SerialNumber=0
+usb 1-9: Product: CULeth RNDIS CDC
+usb 1-9: Manufacturer: busware.de
+
+
+
+Usage of CULeth
+===============
+
+ifconfig usb0 10.0.0.1 up
+ping -s 20 10.0.0.2		# small icmp packets due to small mtu
+
+
+CULeth internals
+================
+
+RNDIS.h		ADAPTER_MAC_ADDRESS	HWaddr 02:00:02:00:02:00 (reverse notation!)
+Ethernet.h	SERVER_MAC_ADDRESS	HWAddr 01:00:01:00:01:00 (reverse notation!)
+IP.h		SERVER_IP_ADDRESS	10.0.0.2
+
+
 
 Tips & Tricks
 =============

@@ -94,6 +94,10 @@ SRC = CULeth/$(TARGET).c                                          \
 	CULeth/Descriptors.c                                        \
 	CULeth/RNDIS.c                                              \
 	CULeth/Ethernet.c                                           \
+	CULeth/ARP.c                                                \
+	CULeth/ICMP.c                                               \
+	CULeth/IP.c                                                 \
+	CULeth/UDP.c                                                \
 	LUFA/Scheduler/Scheduler.c                     \
 	LUFA/Drivers/USB/LowLevel/LowLevel.c           \
 	LUFA/Drivers/USB/LowLevel/Endpoint.c           \
@@ -105,13 +109,6 @@ SRC = CULeth/$(TARGET).c                                          \
 	LUFA/Drivers/AT90USBXXX/Serial_Stream.c        \
 	LUFA/Drivers/AT90USBXXX/Serial.c		\
 
-#	CULeth/ProtocolDecoders.c                                   \
-#	CULeth/ICMP.c                                               \
-#	CULeth/UDP.c                                                \
-#	CULeth/ARP.c                                                \
-#	CULeth/IP.c                                                 \
-#	CULeth/TCP.c                                                \
-#	CULeth/Webserver.c                                          \
 
 #SRC= CULeth/test.c
 
@@ -466,7 +463,7 @@ end:
 # Display size of file.
 HEXSIZE = $(SIZE) --target=$(FORMAT) $(TARGET).hex
 #ELFSIZE = $(SIZE) --mcu=$(MCU) --format=avr $(TARGET).elf
-ELFSIZE = $(SIZE) ,m $(TARGET).elf
+ELFSIZE = $(SIZE) $(TARGET).elf
 
 sizebefore:
 	@if test -f $(TARGET).elf; then echo; echo $(MSG_SIZE_BEFORE); $(ELFSIZE); \
@@ -625,9 +622,8 @@ extcoff: $(TARGET).elf
 
 # Compile: create object files from C source files.
 $(OBJDIR)/%.o : %.c
-	@echo
 	@echo $(MSG_COMPILING) $<
-	$(CC) -c $(ALL_CFLAGS) $< -o $@
+	@$(CC) -c $(ALL_CFLAGS) $< -o $@
 
 
 # Compile: create object files from C++ source files.

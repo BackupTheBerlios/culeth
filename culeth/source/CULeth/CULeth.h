@@ -47,9 +47,6 @@
 		#include "Descriptors.h"
 		#include "RNDIS.h"
 		#include "Ethernet.h"
-		//#include "TCP.h"
-		//#include "ARP.h"
-		//#include "Webserver.h"
 
 		#include <LUFA/Version.h>                        // Library Version Information
 		#include <LUFA/Common/ButtLoadTag.h>             // PROGMEM tags readable by the ButtLoad project
