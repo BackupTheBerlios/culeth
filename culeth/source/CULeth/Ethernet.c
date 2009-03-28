@@ -45,6 +45,9 @@ Ethernet_Frame_Info_t FrameIN;
 /** Ethernet Frame buffer structure, to hold the outgoing Ethernet frame to the host. */
 Ethernet_Frame_Info_t FrameOUT;
 
+
+uint16_t FrameCount= 0;
+
 /** Constant for convenience when checking against or setting a MAC address to the virtual server MAC address. */
 const MAC_Address_t ServerMACAddress    = {SERVER_MAC_ADDRESS};
 
@@ -66,7 +69,7 @@ const IP_Address_t  ClientIPAddress     = {CLIENT_IP_ADDRESS};
  */
 void Ethernet_ProcessPacket(void)
 {
-	//DecodeEthernetFrameHeader(FrameIN.FrameData);
+	FrameCount++;
 
 	/* Cast the incomming Ethernet frame to the Ethernet header type */
 	Ethernet_Frame_Header_t* FrameINHeader  = (Ethernet_Frame_Header_t*)&FrameIN.FrameData;

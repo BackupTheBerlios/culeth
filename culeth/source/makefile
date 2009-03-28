@@ -98,6 +98,7 @@ SRC = CULeth/$(TARGET).c                                          \
 	CULeth/ICMP.c                                               \
 	CULeth/IP.c                                                 \
 	CULeth/UDP.c                                                \
+	CULeth/CULServer.c                                                \
 	LUFA/Scheduler/Scheduler.c                     \
 	LUFA/Drivers/USB/LowLevel/LowLevel.c           \
 	LUFA/Drivers/USB/LowLevel/Endpoint.c           \

@@ -36,6 +36,7 @@
 
 #define  INCLUDE_FROM_UDP_C
 #include "UDP.h"
+#include "CULServer.h"
 
 /** Processes a UDP packet inside an Ethernet frame, and writes the appropriate response
  *  to the output Ethernet frame if a subprotocol handler has created a response packet.
@@ -58,6 +59,14 @@ int16_t UDP_ProcessUDPPacket(void* IPHeaderInStart, void* UDPHeaderInStart, void
 	{
 		RetSize = NO_RESPONSE;
 	}
+
+	if (SwapEndian_16(UDPHeaderIN->DestinationPort) == 7073)
+	{
+                RetSize = CULServer_ProcessPacket(IPHeaderInStart,
+                             &((uint8_t*)UDPHeaderInStart)[sizeof(UDP_Header_t)],
+                             &((uint8_t*)UDPHeaderOutStart)[sizeof(UDP_Header_t)]);
+	}
+
 
 	/* Check to see if the protocol processing routine has filled out a response */
 	if (RetSize > 0)

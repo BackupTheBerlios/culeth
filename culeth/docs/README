@@ -42,7 +42,8 @@ Install / Flash the firmware
 ============================
 
 1. Change into the source directory
-2. Insert the USB-Stick while pressing the micro-switch.
+2. Insert the USB stick while pressing the micro-switch. Release the micro-switch
+   one or two seconds after having inserted the USB stick.
 
    A USB device "03eb:2ffa Atmel Corp." should appear.
 

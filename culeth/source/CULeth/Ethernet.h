@@ -43,12 +43,8 @@
                 #include <LUFA/Common/Common.h>
 
 		#include "EthernetProtocols.h"
-		//#include "ProtocolDecoders.h"
-		//#include "ICMP.h"
-		//#include "TCP.h"
-		//#include "UDP.h"
-		//#include "ARP.h"
 		#include "IP.h"
+		#include "Interfaces.h"
 
 	/* Macros: */
 		/** Physical MAC address of the virtual server on the network */
@@ -67,7 +63,7 @@
 		#define MAC_COMPARE(MAC1, MAC2)          (memcmp(MAC1, MAC2, sizeof(MAC_Address_t)) == 0)
 
 		/** Maximum size of an incomming or outgoing Ethernet frame in bytes */
-		#define ETHERNET_FRAME_SIZE_MAX          120
+		#define ETHERNET_FRAME_SIZE_MAX          100
 		// 1500
 
 		/** Minimum size of an Ethernet packet in bytes, to conform to the Ethernet V2 packet standard */
@@ -79,6 +75,7 @@
 		/** Return value for all sub protocol handling routines, indicating that the packet has not yet been handled */
 		#define NO_PROCESS                       -1
 
+
 	/* Type Defines: */
 		/** Type define for an Ethernet frame buffer. */
 		typedef struct
@@ -86,6 +83,8 @@
 			uint8_t       FrameData[ETHERNET_FRAME_SIZE_MAX]; /**< Ethernet frame contents */
 			uint16_t      FrameLength; /**< Length in bytes of the Ethernet frame stored in the buffer */
 			bool          FrameInBuffer; /**< Indicates if a frame is currently stored in the buffer */
+			//uint8_t	      IfSrc; /**< source interface of frame */
+			//uint8_t	      IfDest; /**< destination interface of frame */
 		} Ethernet_Frame_Info_t;
 
 		/** Type define for an Ethernet frame header */
@@ -104,6 +103,7 @@
 	/* External Variables: */
 		extern Ethernet_Frame_Info_t FrameIN;
 		extern Ethernet_Frame_Info_t FrameOUT;
+		extern uint16_t	FrameCount;
 
 		extern const MAC_Address_t ServerMACAddress;
 		extern const IP_Address_t  ServerIPAddress;
