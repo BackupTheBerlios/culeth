@@ -60,7 +60,7 @@ int16_t ICMP_ProcessICMPPacket(void* InDataStart, void* OutDataStart)
 		ICMPHeaderOUT->Id       = ICMPHeaderIN->Id;
 		ICMPHeaderOUT->Sequence = ICMPHeaderIN->Sequence;
 
-		uint16_t DataSize = FrameIN.FrameLength - ((((uint16_t)InDataStart + sizeof(ICMP_Header_t)) - (uint16_t)FrameIN.FrameData));
+		uint16_t DataSize = Frame.FrameLength - ((((uint16_t)InDataStart + sizeof(ICMP_Header_t)) - (uint16_t)Frame.FrameData));
 
 		/* Copy the remaining payload to the response - echo requests should echo back any sent data */
 		memcpy(&((uint8_t*)OutDataStart)[sizeof(ICMP_Header_t)],

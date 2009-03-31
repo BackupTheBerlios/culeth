@@ -72,8 +72,10 @@ int16_t UDP_ProcessUDPPacket(void* IPHeaderInStart, void* UDPHeaderInStart, void
 	if (RetSize > 0)
 	{
 		/* Fill out the response UDP packet header */
+		uint16_t Port= UDPHeaderOUT->SourcePort;
+
 		UDPHeaderOUT->SourcePort      = UDPHeaderIN->DestinationPort;
-		UDPHeaderOUT->DestinationPort = UDPHeaderIN->SourcePort;
+		UDPHeaderOUT->DestinationPort = Port;
 		UDPHeaderOUT->Checksum        = 0;
 		UDPHeaderOUT->Length          = SwapEndian_16(sizeof(UDP_Header_t) + RetSize);
 

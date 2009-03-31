@@ -82,6 +82,8 @@ int16_t IP_ProcessIPPacket(void* InDataStart, void* OutDataStart)
 	/* Check to see if the protocol processing routine has filled out a response */
 	if (RetSize > 0)
 	{
+
+		IP_Address_t SourceAddress;
 		/* Fill out the response IP packet header */
 		IPHeaderOUT->TotalLength        = SwapEndian_16(sizeof(IP_Header_t) + RetSize);
 		IPHeaderOUT->TypeOfService      = 0;
@@ -93,8 +95,9 @@ int16_t IP_ProcessIPPacket(void* InDataStart, void* OutDataStart)
 		IPHeaderOUT->HeaderChecksum     = 0;
 		IPHeaderOUT->Protocol           = IPHeaderIN->Protocol;
 		IPHeaderOUT->TTL                = DEFAULT_TTL;
+		SourceAddress= IPHeaderIN->SourceAddress;
 		IPHeaderOUT->SourceAddress      = IPHeaderIN->DestinationAddress;
-		IPHeaderOUT->DestinationAddress = IPHeaderIN->SourceAddress;
+		IPHeaderOUT->DestinationAddress = SourceAddress;
 
 		IPHeaderOUT->HeaderChecksum     = Ethernet_Checksum16(IPHeaderOUT, sizeof(IP_Header_t));
 

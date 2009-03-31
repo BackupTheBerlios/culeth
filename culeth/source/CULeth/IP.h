@@ -45,10 +45,10 @@
 
 	/* Macros: */
 		/** Protocol IP address of the host (client) machine, once assigned by DHCP */
-		#define CLIENT_IP_ADDRESS                { 10,     0,    0,    1}
+		// #define CLIENT_IP_ADDRESS                { 10,     0,    0,    1}
 
 		/** Protocol IP address of the virtual server machine */
-		#define SERVER_IP_ADDRESS                { 10,     0,    0,    2}
+		#define SERVER_IP_ADDRESS                { 192, 168, 108, 127}
 
 		/** Protocol IP address of the broadcase address */
 		#define BROADCAST_IP_ADDRESS             {0xFF, 0xFF, 0xFF, 0xFF}

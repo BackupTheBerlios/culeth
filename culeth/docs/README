@@ -18,20 +18,21 @@ and yon.
 As a gimmick, CULeth simulates a simple host with the following features:
 - answer ARP requests
 - support ICMP ping echos
+- reply to UDP requests on port 7073
 
 
-+-----------+             +--------------------+      +---------+
-| Betty 1   |    on air   |                    |      |  host   |
-| 10.0.0.11 |- - - - - - -|         hub        |------|10.0.0.1 |
-|           |             |                    |      |  usb0   |
-+-----------+             +----------+---------+      +---------+
++-----------+             +--------------------+      +----------------+
+| Betty 1   |    on air   |                    |      |      host      |
+| x.x.x.x   |- - - - - - -|         hub        |------| 192.168.108.1  |
+|           |             |                    |      |      usb0      |
++-----------+             +----------+---------+      +----------------+
                                      |
                                      |
-                                +----+----+
-                                |  CULeth |
-                                |10.0.0.2 |
-                                |         |
-                                +---------+
+                                +----+----------+
+                                |  CULeth       |
+                                |192.168.108.127|
+                                |               |
+                                +---------------+
 
 
 CULeth is a derivative of the RNDISEthernet demo from LUFA (see
@@ -77,8 +78,8 @@ usb 1-9: Manufacturer: busware.de
 Usage of CULeth
 ===============
 
-ifconfig usb0 10.0.0.1 up
-ping -s 20 10.0.0.2		# small icmp packets due to small mtu
+ifconfig usb0 192.168.108.1 up
+ping 192.168.108.127
 
 
 CULeth internals

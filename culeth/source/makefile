@@ -93,6 +93,8 @@ OBJDIR = .
 SRC = CULeth/$(TARGET).c                                          \
 	CULeth/Descriptors.c                                        \
 	CULeth/RNDIS.c                                              \
+	CULeth/If_RNDIS.c					\
+	CULeth/If_CC1101.c					\
 	CULeth/Ethernet.c                                           \
 	CULeth/ARP.c                                                \
 	CULeth/ICMP.c                                               \

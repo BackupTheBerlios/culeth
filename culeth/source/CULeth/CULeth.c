@@ -35,14 +35,17 @@
  */
 
 #include "CULeth.h"
+#include "If_RNDIS.h"
+#include "If_CC1101.h"
+#include "Ethernet.h"
 
 
 /* Scheduler Task List */
 TASK_LIST
 {
-	{ Task: USB_USBTask          , TaskStatus: TASK_STOP },
-	{ Task: Ethernet_Task        , TaskStatus: TASK_STOP },
-	{ Task: RNDIS_Task           , TaskStatus: TASK_STOP },
+	{ Task: USB_USBTask           , TaskStatus: TASK_STOP },
+	{ Task: RNDIS_NotificationTask, TaskStatus: TASK_STOP },
+	{ Task: Ethernet_Task         , TaskStatus: TASK_STOP },
 };
 
 /** Main program entry point. This routine configures the hardware required by the application, then
@@ -92,7 +95,7 @@ EVENT_HANDLER(USB_Connect)
 EVENT_HANDLER(USB_Disconnect)
 {
 	/* Stop running TCP/IP and USB management tasks */
-	Scheduler_SetTaskMode(RNDIS_Task, TASK_STOP);
+	Scheduler_SetTaskMode(RNDIS_NotificationTask, TASK_STOP);
 	Scheduler_SetTaskMode(Ethernet_Task, TASK_STOP);
 	Scheduler_SetTaskMode(USB_USBTask, TASK_STOP);
 
@@ -121,8 +124,8 @@ EVENT_HANDLER(USB_ConfigurationChanged)
 	/* Indicate USB connected and ready */
 	UpdateStatus(Status_USBReady);
 
-	/* Start TCP/IP tasks */
-	Scheduler_SetTaskMode(RNDIS_Task, TASK_RUN);
+	/* Start IP tasks */
+	Scheduler_SetTaskMode(RNDIS_NotificationTask, TASK_RUN);
 	Scheduler_SetTaskMode(Ethernet_Task, TASK_RUN);
 }
 
@@ -219,121 +222,73 @@ void UpdateStatus(uint8_t CurrentStatus)
 
 }
 
-/** Task to manage the sending and receiving of encapsulated RNDIS data and notifications. This removes the RNDIS
- *  wrapper from recieved Ethernet frames and places them in the FrameIN global buffer, or adds the RNDIS wrapper
- *  to a frame in the FrameOUT global before sending the buffer contents to the host.
- */
-TASK(RNDIS_Task)
+
+TASK(RNDIS_NotificationTask)
 {
-	/* Select the notification endpoint */
-	Endpoint_SelectEndpoint(CDC_NOTIFICATION_EPNUM);
-
-	/* Check if a message response is ready for the host */
-	if (Endpoint_ReadWriteAllowed() && ResponseReady)
-	{
-		USB_Notification_t Notification = (USB_Notification_t)
-			{
-				bmRequestType: (REQDIR_DEVICETOHOST | REQTYPE_CLASS | REQREC_INTERFACE),
-				bNotification: NOTIF_RESPONSE_AVAILABLE,
-				wValue:        0,
-				wIndex:        0,
-				wLength:       0,
-			};
-
-		/* Indicate that a message response is ready for the host */
-		Endpoint_Write_Stream_LE(&Notification, sizeof(Notification));
-
-		/* Finalize the stream transfer to send the last packet */
-		Endpoint_ClearCurrentBank();
-
-		/* Indicate a response is no longer ready */
-		ResponseReady = false;
-	}
-
-	/* Don't process the data endpoints until the system is in the data initialized state, and the buffer is free */
-	if ((CurrRNDISState == RNDIS_Data_Initialized) && !(MessageHeader->MessageLength))
-	{
-		/* Create a new packet header for reading/writing */
-		RNDIS_PACKET_MSG_t RNDISPacketHeader;
-
-		/* Select the data OUT endpoint */
-		Endpoint_SelectEndpoint(CDC_RX_EPNUM);
-
-		/* Check if the data OUT endpoint contains data, and that the IN buffer is empty */
-		if (Endpoint_ReadWriteAllowed() && !(FrameIN.FrameInBuffer))
-		{
-			/* Read in the packet message header */
-			Endpoint_Read_Stream_LE(&RNDISPacketHeader, sizeof(RNDIS_PACKET_MSG_t));
-
-			/* Stall the request if the data is too large */
-			if (RNDISPacketHeader.MessageLength > ETHERNET_FRAME_SIZE_MAX)
-			{
-				Endpoint_StallTransaction();
-				return;
-			}
-
-			/* Read in the Ethernet frame into the buffer */
-			Endpoint_Read_Stream_LE(FrameIN.FrameData, RNDISPacketHeader.DataLength);
-
-			/* Finalize the stream transfer to send the last packet */
-			Endpoint_ClearCurrentBank();
-
-			/* Store the size of the Ethernet frame */
-			FrameIN.FrameLength = RNDISPacketHeader.DataLength;
-
-			/* Indicate Ethernet IN buffer full */
-			FrameIN.FrameInBuffer = true;
-		}
-
-		/* Select the data IN endpoint */
-		Endpoint_SelectEndpoint(CDC_TX_EPNUM);
-
-		/* Check if the data IN endpoint is ready for more data, and that the IN buffer is full */
-		if (Endpoint_ReadWriteAllowed() && FrameOUT.FrameInBuffer)
-		{
-			/* Clear the packet header with all 0s so that the relevant fields can be filled */
-			memset(&RNDISPacketHeader, 0, sizeof(RNDIS_PACKET_MSG_t));
-
-			/* Construct the required packet header fields in the buffer */
-			RNDISPacketHeader.MessageType   = REMOTE_NDIS_PACKET_MSG;
-			RNDISPacketHeader.MessageLength = (sizeof(RNDIS_PACKET_MSG_t) + FrameOUT.FrameLength);
-			RNDISPacketHeader.DataOffset    = (sizeof(RNDIS_PACKET_MSG_t) - sizeof(RNDIS_Message_Header_t));
-			RNDISPacketHeader.DataLength    = FrameOUT.FrameLength;
-
-			/* Send the packet header to the host */
-			Endpoint_Write_Stream_LE(&RNDISPacketHeader, sizeof(RNDIS_PACKET_MSG_t));
-
-			/* Send the Ethernet frame data to the host */
-			Endpoint_Write_Stream_LE(FrameOUT.FrameData, RNDISPacketHeader.DataLength);
-
-			/* Finalize the stream transfer to send the last packet */
-			Endpoint_ClearCurrentBank();
-
-			/* Indicate Ethernet OUT buffer no longer full */
-			FrameOUT.FrameInBuffer = false;
-		}
-	}
+	RNDIS_Notification();
 }
+
+
+If_t RX(void) {
+
+	if(RNDIS_RX()) return If_RNDIS;
+	if(CC1101_RX()) return If_CC1101;
+
+	return If_NONE;
+}
+
+void TX(If_t Destination) {
+
+	if(Destination & If_RNDIS) RNDIS_TX();
+	if(Destination & If_CC1101) CC1101_TX();
+
+}
+
+
 
 /** Ethernet frame processing task. This task checks to see if a frame has been received, and if so hands off the processing
  *  of the frame to the Ethernet processing routines.
  */
 TASK(Ethernet_Task)
 {
-	/* Task for Ethernet processing. Incoming ethernet frames are loaded into the FrameIN structure, and
-	   outgoing frames should be loaded into the FrameOUT structure. Both structures can only hold a single
-	   Ethernet frame at a time, so the FrameInBuffer bool is used to indicate when the buffers contain data. */
+	uint8_t	If_Src= If_NONE;
+	uint8_t If_Dst= If_NONE;
 
-	/* Check if a frame has been written to the IN frame buffer */
-	if (FrameIN.FrameInBuffer)
-	{
-		/* Indicate packet processing started */
+	/* receive ethernet frame from source interface */
+	If_Src= RX();
+
+	/* process frame in buffer */
+	if(If_Src != If_NONE) {
+
+		/* update status LED */
 		UpdateStatus(Status_ProcessingEthernetFrame);
 
-		/* Process the ethernet frame - replace this with your own Ethernet handler code as desired */
-		Ethernet_ProcessPacket();
+		/* process destinations */
+		if(isServerMACAddress()) {
+			If_Dst= If_INTERNAL;
+		} else {
+			if(isBroadcastMACAddress()) {
+				If_Dst= If_ALL;
+			} else {
+				if(If_Src== If_CC1101) {
+					If_Dst= If_RNDIS;
+				} else {
+					If_Dst= If_CC1101;
+				}
+			}
+		}
 
-		/* Indicate packet processing complete */
+		/* forward frame to destination interfaces */
+		TX(If_Dst);
+
+		if(If_Dst & If_INTERNAL) {
+			If_Dst= If_Src;
+			If_Src= If_INTERNAL;
+			if(Ethernet_ProcessPacket()) TX(If_Dst);
+		}
+
 		UpdateStatus(Status_USBReady);
+
 	}
+
 }

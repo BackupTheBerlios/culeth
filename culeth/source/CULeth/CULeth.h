@@ -49,7 +49,6 @@
 		#include "Ethernet.h"
 
 		#include <LUFA/Version.h>                        // Library Version Information
-		#include <LUFA/Common/ButtLoadTag.h>             // PROGMEM tags readable by the ButtLoad project
 		#include <LUFA/Drivers/USB/USB.h>                // USB Functionality
 		#include <LUFA/Scheduler/Scheduler.h>            // Simple scheduler for task management
 
@@ -96,7 +95,7 @@
 		};
 
 	/* Tasks: */
-		TASK(RNDIS_Task);
+		TASK(RNDIS_NotificationTask);
 		TASK(Ethernet_Task);
 
 	/* Function Prototypes: */

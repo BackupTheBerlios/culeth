@@ -48,7 +48,7 @@
 
 	/* Macros: */
 		/** Physical MAC address of the virtual server on the network */
-		#define SERVER_MAC_ADDRESS               {0x00, 0x01, 0x00, 0x01, 0x00, 0x01}
+		#define SERVER_MAC_ADDRESS               {0x02, 0x50, 0x8b, 0x00, 0x00, 0x01}
 
 		/** Physical MAC address of the network broadcast address */
 		#define BROADCAST_MAC_ADDRESS            {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF}
@@ -63,7 +63,7 @@
 		#define MAC_COMPARE(MAC1, MAC2)          (memcmp(MAC1, MAC2, sizeof(MAC_Address_t)) == 0)
 
 		/** Maximum size of an incomming or outgoing Ethernet frame in bytes */
-		#define ETHERNET_FRAME_SIZE_MAX          100
+		#define ETHERNET_FRAME_SIZE_MAX          200
 		// 1500
 
 		/** Minimum size of an Ethernet packet in bytes, to conform to the Ethernet V2 packet standard */
@@ -82,9 +82,6 @@
 		{
 			uint8_t       FrameData[ETHERNET_FRAME_SIZE_MAX]; /**< Ethernet frame contents */
 			uint16_t      FrameLength; /**< Length in bytes of the Ethernet frame stored in the buffer */
-			bool          FrameInBuffer; /**< Indicates if a frame is currently stored in the buffer */
-			//uint8_t	      IfSrc; /**< source interface of frame */
-			//uint8_t	      IfDest; /**< destination interface of frame */
 		} Ethernet_Frame_Info_t;
 
 		/** Type define for an Ethernet frame header */
@@ -101,8 +98,7 @@
 		} Ethernet_Frame_Header_t;
 
 	/* External Variables: */
-		extern Ethernet_Frame_Info_t FrameIN;
-		extern Ethernet_Frame_Info_t FrameOUT;
+		extern Ethernet_Frame_Info_t Frame;
 		extern uint16_t	FrameCount;
 
 		extern const MAC_Address_t ServerMACAddress;
@@ -112,7 +108,9 @@
 		extern const IP_Address_t  ClientIPAddress;
 
 	/* Function Prototypes: */
-		void     Ethernet_ProcessPacket(void);
+		bool 	 isServerMACAddress(void);
+		bool 	 isBroadcastMACAddress(void);
+		bool     Ethernet_ProcessPacket(void);
 		uint16_t Ethernet_Checksum16(void* Data, uint16_t Bytes);
 
 #endif
