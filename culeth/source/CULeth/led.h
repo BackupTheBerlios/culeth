@@ -4,10 +4,6 @@
 #define HI8(x)  ((uint8_t)((x) >> 8))
 #define LO8(x)  ((uint8_t)(x))
 
-#define SET_BIT(PORT, BITNUM) ((PORT) |= (1<<(BITNUM)))
-#define CLEAR_BIT(PORT, BITNUM) ((PORT) &= ~(1<<(BITNUM)))
-#define TOGGLE_BIT(PORT, BITNUM) ((PORT) ^= (1<<(BITNUM)))
-
 #include "board.h"
 
 #define LED_Init()   LED_DDR  |= _BV(LED_PIN)

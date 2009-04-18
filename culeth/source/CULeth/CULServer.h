@@ -21,6 +21,12 @@
 
 		#define CULSERVER_OP_STAT       's'
 
+		#define CULSERVER_OP_CC1101INFO 'c'
+
+		#define CULSERVER_OP_CC1101SEND 'p'
+
+		#define CULSERVER_OP_BLINK      'b'
+
 		#define ACK			6
 		#define NAK			21
 
@@ -32,13 +38,19 @@
 		typedef struct
 		{
 			uint8_t Operation; /**< operation  */
+			uint8_t Token;
+			uint8_t Filler;
+			uint8_t Length;
 			char Operand[MAXLEN];
 		} CULServer_Request_t;
 
 		/** Type define for a CULServer reply packet inside an Ethernet frame. */
 		typedef struct
 		{
+			uint8_t Operation; /**< operation  */
+			uint8_t Token;
 			uint8_t ExitCode; /**< exit code  */
+			uint8_t Length;
 			char Result[MAXLEN];
 		} CULServer_Reply_t;
 

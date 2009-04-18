@@ -1,3 +1,12 @@
+*******************************************************************************
+
+CULeth
+(c) 2009 Dr. Boris Neubert   omega@online.de
+http://developer.berlios.de/projects/culeth
+
+*******************************************************************************
+
+
 
 Rationale
 =========
@@ -29,7 +38,7 @@ As a gimmick, CULeth simulates a simple host with the following features:
                                      |
                                      |
                                 +----+----------+
-                                |  CULeth       |
+                                |  CULServer    |
                                 |192.168.108.127|
                                 |               |
                                 +---------------+
@@ -78,16 +87,53 @@ usb 1-9: Manufacturer: busware.de
 Usage of CULeth
 ===============
 
+Interface setup
+---------------
+
 ifconfig usb0 192.168.108.1 up
 ping 192.168.108.127
+
+CULserver communication
+-----------------------
+
+Use tools/udp.pl to talk to the CULserver.
+
+
+
+Listening to CULeth
+===================
+
+See http://developer.berlios.de/projects/culfw/ for detail on culfw!
+
+Use a second CUL and put culfw on it. Try the following commands:
+
+(1) tune CUL to 433.249 MHz:
+W0F10
+W10A9
+W11D6
+
+Fcarrier= Value * 26MHz/65536 => 433.249 MHz corresponds to 10A9D6
+
+unplug/plug CUL to activate the setting!
+
+(2) listen
+X09
+
+
+
 
 
 CULeth internals
 ================
 
+The main function is in CULeth.c
+
+
+
+
 RNDIS.h		ADAPTER_MAC_ADDRESS	HWaddr 02:00:02:00:02:00 (reverse notation!)
 Ethernet.h	SERVER_MAC_ADDRESS	HWAddr 01:00:01:00:01:00 (reverse notation!)
-IP.h		SERVER_IP_ADDRESS	10.0.0.2
+IP.h		SERVER_IP_ADDRESS	192.168.108.127
 
 
 

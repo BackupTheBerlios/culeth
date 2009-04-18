@@ -32,4 +32,9 @@
 
 #define BUSWARE_CUL
 
+#define SET_BIT(PORT, BITNUM) ((PORT) |= (1<<(BITNUM)))
+#define CLEAR_BIT(PORT, BITNUM) ((PORT) &= ~(1<<(BITNUM)))
+#define TOGGLE_BIT(PORT, BITNUM) ((PORT) ^= (1<<(BITNUM)))
+
+
 #endif

@@ -35,9 +35,13 @@
  */
 
 #include "CULeth.h"
+#include "board.h"
+#include "led.h"
+#include "cc1100.h"
 #include "If_RNDIS.h"
 #include "If_CC1101.h"
 #include "Ethernet.h"
+
 
 
 /* Scheduler Task List */
@@ -62,6 +66,7 @@ int main(void)
 
 	/* Hardware Initialization */
 	LED_Init();
+	CC1101_Init();
 	SerialStream_Init(9600, false);
 
 	/* Indicate USB not ready */
@@ -282,9 +287,11 @@ TASK(Ethernet_Task)
 		TX(If_Dst);
 
 		if(If_Dst & If_INTERNAL) {
-			If_Dst= If_Src;
-			If_Src= If_INTERNAL;
-			if(Ethernet_ProcessPacket()) TX(If_Dst);
+			if(Ethernet_ProcessPacket()) {
+				If_Dst= If_Src;
+				If_Src= If_INTERNAL;
+				TX(If_Dst);
+			}
 		}
 
 		UpdateStatus(Status_USBReady);

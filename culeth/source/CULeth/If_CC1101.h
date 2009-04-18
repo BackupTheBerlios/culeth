@@ -4,8 +4,12 @@
 	#include <stdbool.h>
 	#include "Interfaces.h"
 
+	void CC1101_Init(void);
 	bool CC1101_RX(void);
 	bool CC1101_TX(void);
+	bool CC1101_TX_test(void);
+
+	#define CC1101_TESTPACKETSIZE	56
 
 	extern uint16_t FrameCount_If_CC1101_IN;
 	extern uint16_t FrameCount_If_CC1101_OUT;
