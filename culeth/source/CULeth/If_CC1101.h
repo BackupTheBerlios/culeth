@@ -8,6 +8,7 @@
 	bool CC1101_RX(void);
 	bool CC1101_TX(void);
 	bool CC1101_TX_test(void);
+	uint16_t build_UDP_Packet(uint8_t* Data);
 
 	#define CC1101_TESTPACKETSIZE	56
 

@@ -1,21 +1,20 @@
-/***********************************************************************************
-    Filename: cc1100.h
-
-    Copyright 2007 Texas Instruments, Inc.
-***********************************************************************************/
 
 #ifndef CC1100_H
 #define CC1100_H
 
 #include <avr/io.h>
-#include "board.h"
 
-extern void ccInitChip(void);
-extern void ccDump(void);
-extern uint8_t cc1100_readReg(uint8_t addr);
-extern void ccStrobe(uint8_t strobe);
-extern uint8_t cc1100_sendbyte(uint8_t data);
-extern uint8_t cc1100_read(uint8_t data);
+void ccInitChip(void);
+void ccTX(void);
+void ccRX(void);
+void ccStrobe(uint8_t);
+
+uint8_t cc1100_readReg(uint8_t addr);
+void ccGetConfig(uint8_t* data);
+void ccGetStatus(uint8_t* data);
+
+uint8_t cc1100_sendbyte(uint8_t data);
+uint8_t cc1100_read(uint8_t data);
 
 
 // Configuration Registers
@@ -80,6 +79,8 @@ extern uint8_t cc1100_read(uint8_t data);
 #define CC1100_VCO_VC_DAC       0x39        // Current setting from PLL cal module
 #define CC1100_TXBYTES          0x3A        // Underflow and # of bytes in TXFIFO
 #define CC1100_RXBYTES          0x3B        // Overflow and # of bytes in RXFIFO
+#define CC1100_RCCTRL1_STATUS   0x3C        // Underflow and # of bytes in TXFIFO
+#define CC1100_RCCTRL0_STATUS   0x3D        // Overflow and # of bytes in RXFIFO
 
 // Multi byte memory locations
 #define CC1100_PATABLE          0x3E
@@ -87,9 +88,11 @@ extern uint8_t cc1100_read(uint8_t data);
 #define CC1100_RXFIFO           0x3F
 
 // Definitions for burst/single access to registers
+#define CC1100_WRITE_SINGLE     0x00
 #define CC1100_WRITE_BURST      0x40
 #define CC1100_READ_SINGLE      0x80
 #define CC1100_READ_BURST       0xC0
+#define CC1100_READ_STATUS	0xC0
 
 // Strobe commands
 #define CC1100_SRES             0x30        // Reset chip.
@@ -115,10 +118,15 @@ extern uint8_t cc1100_read(uint8_t data);
 #define CC1100_SNOP             0x3D        // No operation. May be used to pad strobe commands to two
                                             // bytes for simpler software.
 
+// register sizes
+#define CC1100_CONFIG_SIZE_R	(CC1100_RCCTRL0-CC1100_IOCFG2+1)
+#define CC1100_CONFIG_SIZE_W	(CC1100_TEST0-CC1100_IOCFG2+1)
+#define CC1100_STATUS_SIZE_R	(CC1100_RXBYTES-CC1100_PARTNUM+1)
 
-//----------------------------------------------------------------------------------
+
+//------------------------------------------------------------------------------
 // Chip Status Byte
-//----------------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 
 // Bit fields in the chip status byte
 #define CC1100_STATUS_CHIP_RDYn_BM             0x80
@@ -136,14 +144,22 @@ extern uint8_t cc1100_read(uint8_t data);
 #define CC1100_STATE_TX_UNDERFLOW              0x70
 
 
-//----------------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Other register bit fields
-//----------------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 #define CC1100_LQI_CRC_OK_BM                   0x80
 #define CC1100_LQI_EST_BM                      0x7F
+
+
+//------------------------------------------------------------------------------
+// see CC1101 documentation, chapter 10, p. 28
+//------------------------------------------------------------------------------
+
+#include "board.h"
 
 #define CC1100_DEASSERT  SET_BIT( CC1100_CS_PORT, CC1100_CS_PIN )
 #define CC1100_ASSERT    CLEAR_BIT( CC1100_CS_PORT, CC1100_CS_PIN )
 
-/**********************************************************************************/
+
+/******************************************************************************/
 #endif

@@ -93,6 +93,10 @@ Interface setup
 ifconfig usb0 192.168.108.1 up
 ping 192.168.108.127
 
+Packet sniffing:
+tcpdump -e -i usb0 -n -U -v -s 200 -X
+
+
 CULserver communication
 -----------------------
 

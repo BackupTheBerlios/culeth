@@ -1,7 +1,10 @@
 #include "If_CC1101.h"
 #include "Ethernet.h"
+#include "spi.h"
 #include "cc1100.h"
 
+#include "IP.h"
+#include "UDP.h"
 
 uint16_t FrameCount_If_CC1101_IN = 0;
 uint16_t FrameCount_If_CC1101_OUT= 0;
@@ -9,57 +12,59 @@ uint16_t FrameCount_If_CC1101_OUT= 0;
 
 void CC1101_Init(void) {
 
-     // SPI
-     // set SCK to Hi
-     SPI_PORT |= 1<<SPI_SCLK;
-     // MOSI, SCK, SS as output
-     SPI_DDR  |= 1<<SPI_MOSI | 1<<SPI_SCLK | 1<<SPI_SS; // mosi, sck, ss output
-     // MISO as input
-     SPI_DDR  &= ~( 1<<SPI_MISO ); // miso input
-
-     // master mode
-     SPCR = 1<<MSTR | 1<<SPE;
-
-     SPSR |= _BV(SPI2X);
-
-     ccInitChip();
+	spi_init();
+     	ccInitChip();
 }
 
 
 
 bool CC1101_RX(void)
 {
-     if (cc1100_readReg( CC1100_MARCSTATE ) == 1) {
 
-	  if (cc1100_readReg( CC1100_RXBYTES )) {
-	       Frame.FrameLength = cc1100_read(0xbf);
+     	uint8_t* UDPMessage=	get_UDP_Payload(Frame.FrameData);
+     	uint8_t size= 0;
 
-	       CC1100_ASSERT;
-	       cc1100_sendbyte(0xff);
+     	if(cc1100_readReg(CC1100_MARCSTATE)== 1) {
 
-	       for (uint8_t i=0; i<Frame.FrameLength; i++) {
-		    Frame.FrameData[i]= cc1100_sendbyte(0);
-	       }
+	  	if(cc1100_readReg(CC1100_RXBYTES)) {
 
-	       CC1100_DEASSERT;
+	       		size= cc1100_read(0xbf);
 
-//	       printf_P( PSTR("\r\n" ) );
-//	  printf_P( PSTR("State: %02X\r\n" ), cc1100_readReg( CC1100_MARCSTATE ) );
+			CC1100_ASSERT;
+			cc1100_sendbyte(0xff);
 
-//	       printf_P( PSTR("State: %02X\r\n" ), cc1100_readReg( CC1100_MARCSTATE ) );
-	  }
+	       		uint8_t b;
+	       		for (uint8_t i= 0; i< size; i++) {
+		    		b= cc1100_sendbyte(0);
+		    		if(i< MAX_PAYLOAD_SIZE) {
+		    			UDPMessage[i]= b;
+		    		}
+		    	}
 
-	  ccStrobe( CC1100_SFRX  );
-	  ccStrobe( CC1100_SIDLE );
-	  ccStrobe( CC1100_SNOP  );
-	  ccStrobe( CC1100_SRX   );
+			CC1100_DEASSERT;
 
-    	  FrameCount_If_CC1101_IN++;
+			//UDPMessage[0]= size;
+        		//Frame.FrameLength= finalize_UDP_Packet(Frame.FrameData, 1);
 
-	  return true;
-     }
+        	//size );
 
-     return false;
+
+
+        	}
+
+		ccStrobe(CC1100_SFRX);
+		ccStrobe(CC1100_SIDLE);
+		ccStrobe(CC1100_SNOP);
+		ccStrobe(CC1100_SRX);
+
+    		FrameCount_If_CC1101_IN++;
+    		if(size) Frame.FrameLength= finalize_UDP_Packet(Frame.FrameData, size);
+
+		return size;
+	;
+     	}
+
+     	return false;
 }
 
 bool CC1101_TX(void)

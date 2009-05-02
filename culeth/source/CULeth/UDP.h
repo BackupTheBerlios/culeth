@@ -49,6 +49,17 @@
 		/** Destination UDP port for a DHCP reply */
 		#define UDP_PORT_DHCP_REPLY   68
 
+
+/** Constant for convenience when checking against or setting an IP address to the virtual server IP address. */
+#define TARGET_IP_ADDRESS                { 192, 168, 108, 1}
+extern const IP_Address_t  TargetIPAddress;
+#define TARGET_PORT	7073
+
+
+#define TEST_PAYLOAD_SIZE	16
+#define MAX_PAYLOAD_SIZE 	64
+
+
 	/* Type Defines: */
 		/** Type define for a UDP packet header */
 		typedef struct
@@ -59,7 +70,22 @@
 			uint16_t Checksum; /**< Optional UDP packet checksum */
 		} UDP_Header_t;
 
+
+
+typedef struct {
+	Ethernet_Frame_Header_t 	FrameHeader;
+	IP_Header_t 			IPHeader;
+	UDP_Header_t 			UDPHeader;
+	uint8_t				UDPMessage[MAX_PAYLOAD_SIZE];
+} UDP_Packet_t;
+
+
+
 	/* Function Prototypes: */
 		int16_t UDP_ProcessUDPPacket(void* IPHeaderInStart, void* UDPHeaderInStart, void* UDPHeaderOutStart);
+
+uint16_t build_UDP_TestPacket(uint8_t* Data);
+uint8_t* get_UDP_Payload(uint8_t* Data);
+uint16_t finalize_UDP_Packet(uint8_t* Data, uint8_t payloadsize);
 
 #endif

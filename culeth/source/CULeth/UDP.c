@@ -1,32 +1,3 @@
-/*
-             LUFA Library
-     Copyright (C) Dean Camera, 2009.
-
-  dean [at] fourwalledcubicle [dot] com
-      www.fourwalledcubicle.com
-*/
-
-/*
-  Copyright 2009  Dean Camera (dean [at] fourwalledcubicle [dot] com)
-
-  Permission to use, copy, modify, and distribute this software
-  and its documentation for any purpose and without fee is hereby
-  granted, provided that the above copyright notice appear in all
-  copies and that both that the copyright notice and this
-  permission notice and warranty disclaimer appear in supporting
-  documentation, and that the name of the author not be used in
-  advertising or publicity pertaining to distribution of the
-  software without specific, written prior permission.
-
-  The author disclaim all warranties with regard to this
-  software, including all implied warranties of merchantability
-  and fitness.  In no event shall the author be liable for any
-  special, indirect or consequential damages or any damages
-  whatsoever resulting from loss of use, data or profits, whether
-  in an action of contract, negligence or other tortious action,
-  arising out of or in connection with the use or performance of
-  this software.
-*/
 
 /** \file
  *
@@ -37,6 +8,7 @@
 #define  INCLUDE_FROM_UDP_C
 #include "UDP.h"
 #include "CULServer.h"
+#include "RNDIS.h" // -> ADAPTER_MAC_ADDRESS
 
 /** Processes a UDP packet inside an Ethernet frame, and writes the appropriate response
  *  to the output Ethernet frame if a subprotocol handler has created a response packet.
@@ -85,3 +57,104 @@ int16_t UDP_ProcessUDPPacket(void* IPHeaderInStart, void* UDPHeaderInStart, void
 
 	return NO_RESPONSE;
 }
+
+
+
+const IP_Address_t  TargetIPAddress     = {TARGET_IP_ADDRESS};
+
+
+uint16_t build_UDP_TestPacket(uint8_t* Data) {
+
+	/*
+	UDP_Packet_t*	UDPPacket= (UDP_Packet_t*) Data;
+
+	const MAC_Address_t  AdapterMACAddress     = {ADAPTER_MAC_ADDRESS};
+
+	// build Ethernet Frame
+	memcpy(&UDPPacket->FrameHeader.Source, &ServerMACAddress, sizeof(MAC_Address_t));
+	memcpy(&UDPPacket->FrameHeader.Destination, &AdapterMACAddress, sizeof(MAC_Address_t));
+	UDPPacket->FrameHeader.EtherType= SwapEndian_16(ETHERTYPE_IPV4);
+
+	// build IP Header
+	UDPPacket->IPHeader.TotalLength        = SwapEndian_16(sizeof(IP_Header_t) + 8+ TEST_PAYLOAD_SIZE);
+	UDPPacket->IPHeader.TypeOfService      = 0;
+	UDPPacket->IPHeader.HeaderLength       = (sizeof(IP_Header_t) / sizeof(uint32_t));
+	UDPPacket->IPHeader.Version            = 4;
+	UDPPacket->IPHeader.Flags              = 0;
+	UDPPacket->IPHeader.FragmentOffset     = 0;
+	UDPPacket->IPHeader.Identification     = 0;
+	UDPPacket->IPHeader.HeaderChecksum     = 0;
+	UDPPacket->IPHeader.Protocol           = PROTOCOL_UDP;
+	UDPPacket->IPHeader.TTL                = DEFAULT_TTL;
+	UDPPacket->IPHeader.SourceAddress      = ServerIPAddress;
+	UDPPacket->IPHeader.DestinationAddress = TargetIPAddress;
+	UDPPacket->IPHeader.HeaderChecksum     = Ethernet_Checksum16(&UDPPacket->IPHeader, sizeof(IP_Header_t));
+
+	// build UDP header
+	UDPPacket->UDPHeader.SourcePort= 0;
+	UDPPacket->UDPHeader.DestinationPort= SwapEndian_16(7073);
+	UDPPacket->UDPHeader.Length= SwapEndian_16(8+TEST_PAYLOAD_SIZE);
+	UDPPacket->UDPHeader.Checksum= 0; // no checksum
+
+	// build UDP message
+	for(int i= 0; i<= TEST_PAYLOAD_SIZE; i++) {
+		UDPPacket->UDPMessage[i]= i;
+	}
+
+	return sizeof(UDP_Packet_t)+TEST_PAYLOAD_SIZE-MAX_PAYLOAD_SIZE;
+	*/
+	uint8_t* Payload= get_UDP_Payload(Frame.FrameData);
+	// build UDP message
+	for(int i= 0; i< TEST_PAYLOAD_SIZE; i++) {
+		Payload[i]= i;
+	}
+	return finalize_UDP_Packet(Frame.FrameData, TEST_PAYLOAD_SIZE);
+}
+
+uint8_t* get_UDP_Payload(uint8_t* Data) {
+
+	return ((UDP_Packet_t*)Data)->UDPMessage;
+}
+
+
+uint16_t finalize_UDP_Packet(uint8_t* Data, uint8_t payloadsize) {
+
+	UDP_Packet_t*	UDPPacket= (UDP_Packet_t*) Data;
+
+	const MAC_Address_t  AdapterMACAddress     = {ADAPTER_MAC_ADDRESS};
+
+	// sanity check
+	if(payloadsize> MAX_PAYLOAD_SIZE) {
+		payloadsize= MAX_PAYLOAD_SIZE;
+	}
+
+	// build Ethernet Frame
+	memcpy(&UDPPacket->FrameHeader.Source, &ServerMACAddress, sizeof(MAC_Address_t));
+	memcpy(&UDPPacket->FrameHeader.Destination, &AdapterMACAddress, sizeof(MAC_Address_t));
+	UDPPacket->FrameHeader.EtherType= SwapEndian_16(ETHERTYPE_IPV4);
+
+	// build IP Header
+	UDPPacket->IPHeader.TotalLength        = SwapEndian_16(sizeof(IP_Header_t) + 8+ payloadsize);
+	UDPPacket->IPHeader.TypeOfService      = 0;
+	UDPPacket->IPHeader.HeaderLength       = (sizeof(IP_Header_t) / sizeof(uint32_t));
+	UDPPacket->IPHeader.Version            = 4;
+	UDPPacket->IPHeader.Flags              = 0;
+	UDPPacket->IPHeader.FragmentOffset     = 0;
+	UDPPacket->IPHeader.Identification     = 0;
+	UDPPacket->IPHeader.HeaderChecksum     = 0;
+	UDPPacket->IPHeader.Protocol           = PROTOCOL_UDP;
+	UDPPacket->IPHeader.TTL                = DEFAULT_TTL;
+	UDPPacket->IPHeader.SourceAddress      = ServerIPAddress;
+	UDPPacket->IPHeader.DestinationAddress = TargetIPAddress;
+	UDPPacket->IPHeader.HeaderChecksum     = Ethernet_Checksum16(&UDPPacket->IPHeader, sizeof(IP_Header_t));
+
+	// build UDP header
+	UDPPacket->UDPHeader.SourcePort= 0;
+	UDPPacket->UDPHeader.DestinationPort= SwapEndian_16(7073);
+	UDPPacket->UDPHeader.Length= SwapEndian_16(8+payloadsize);
+	UDPPacket->UDPHeader.Checksum= 0; // no checksum
+
+	return sizeof(UDP_Packet_t)+payloadsize-MAX_PAYLOAD_SIZE;
+}
+
+

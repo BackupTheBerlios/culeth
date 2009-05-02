@@ -101,6 +101,12 @@ SRC = CULeth/$(TARGET).c                                          \
 	CULeth/IP.c                                                 \
 	CULeth/UDP.c                                                \
 	CULeth/CULServer.c                                                \
+	CULeth/config.c \
+	CULeth/clock.c \
+	CULeth/boot.c \
+	CULeth/watchdog.c \
+	CULeth/extras.c \
+	CULeth/spi.c \
 	CULeth/cc1100.c \
 	LUFA/Scheduler/Scheduler.c                     \
 	LUFA/Drivers/USB/LowLevel/LowLevel.c           \

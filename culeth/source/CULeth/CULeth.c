@@ -37,12 +37,19 @@
 #include "CULeth.h"
 #include "board.h"
 #include "led.h"
+#include "clock.h"
+#include "watchdog.h"
+#include "config.h"
 #include "cc1100.h"
 #include "If_RNDIS.h"
 #include "If_CC1101.h"
 #include "Ethernet.h"
+#include "UDP.h"
+#include "extras.h"
+#include "boot.h"
 
 
+uint8_t testflag= 0;
 
 /* Scheduler Task List */
 TASK_LIST
@@ -50,6 +57,8 @@ TASK_LIST
 	{ Task: USB_USBTask           , TaskStatus: TASK_STOP },
 	{ Task: RNDIS_NotificationTask, TaskStatus: TASK_STOP },
 	{ Task: Ethernet_Task         , TaskStatus: TASK_STOP },
+	{ Task: Timer_Task	      , TaskStatus: TASK_STOP },
+	{ Task: Extras_Task	      , TaskStatus: TASK_RUN  },
 };
 
 /** Main program entry point. This routine configures the hardware required by the application, then
@@ -58,16 +67,20 @@ TASK_LIST
 int main(void)
 {
 	/* Disable watchdog if enabled by bootloader/fuses */
-	MCUSR &= ~(1 << WDRF);
-	wdt_disable();
-
-	/* Disable Clock Division */
-	SetSystemClockPrescaler(0);
+	disable_watchdog();
 
 	/* Hardware Initialization */
+	timer_Init();
+	config_Init();
+
+	check_bootloader_request();
+
 	LED_Init();
 	CC1101_Init();
 	SerialStream_Init(9600, false);
+
+	/* Enable watchdog */
+	//enable_watchdog();
 
 	/* Indicate USB not ready */
 	UpdateStatus(Status_USBNotReady);
@@ -237,7 +250,7 @@ TASK(RNDIS_NotificationTask)
 If_t RX(void) {
 
 	if(RNDIS_RX()) return If_RNDIS;
-	if(CC1101_RX()) return If_CC1101;
+	//if(CC1101_RX()) return If_CC1101;
 
 	return If_NONE;
 }
@@ -245,7 +258,7 @@ If_t RX(void) {
 void TX(If_t Destination) {
 
 	if(Destination & If_RNDIS) RNDIS_TX();
-	if(Destination & If_CC1101) CC1101_TX();
+	//if(Destination & If_CC1101) CC1101_TX();
 
 }
 
@@ -273,7 +286,7 @@ TASK(Ethernet_Task)
 			If_Dst= If_INTERNAL;
 		} else {
 			if(isBroadcastMACAddress()) {
-				If_Dst= If_ALL;
+				If_Dst= If_ALL & ~If_Src;
 			} else {
 				if(If_Src== If_CC1101) {
 					If_Dst= If_RNDIS;
@@ -293,6 +306,7 @@ TASK(Ethernet_Task)
 				TX(If_Dst);
 			}
 		}
+
 
 		UpdateStatus(Status_USBReady);
 

@@ -7,47 +7,50 @@ use IO::Socket;
 my $REMOTEHOST	= '192.168.108.127';
 my $REMOTEPORT	= 7073;
 my $LOCALPORT	= 7073;
-my $MAXLEN	= 16;
+my $MAXLEN	= 128;
 
 my $mode	= "client";
 
 my $ACK		=  6;
 my $NAK		= 21;
-my $CULSERVER_OP_ECHO=       'e';
-my $CULSERVER_OP_IP  =       'i';
-my $CULSERVER_OP_STAT=       's';
-my $CULSERVER_OP_CC1101INFO= 'c';
+my $CULSERVER_OP_GETIP  	= 'i';
+my $CULSERVER_OP_GETSTAT	= 's';
+my $CULSERVER_OP_GETCC1101STATUS	= 'u';
+my $CULSERVER_OP_GETCC1101CONFIG	= 'c';
+my $CULSERVER_OP_GETTIME	= 't';
+my $CULSERVER_OP_CC1101SEND 	= 'p';
+my $CULSERVER_OP_BLINK	 	= 'b';
+my $CULSERVER_OP_TEST		= '?';
+my $CULSERVER_OP_BOOTLOADER	= '>';
 
 my %CULSERVER_COMMANDS= (
-	"get remote ip address" => "i",
-	"get remote statistics" => "s",
-	"get CC1101 parameters" => "c",
-	"send CC1101 test packet" => "p",
-	"blink" => "b"
+	"get remote ip address" => $CULSERVER_OP_GETIP,
+	"get remote statistics" => $CULSERVER_OP_GETSTAT,
+	"get time" => $CULSERVER_OP_GETTIME,
+	"get CC1101 status" => $CULSERVER_OP_GETCC1101STATUS,
+	"send CC1101 test packet" => $CULSERVER_OP_CC1101SEND,
+	"blink" => $CULSERVER_OP_BLINK,
+	"test feature" => $CULSERVER_OP_TEST,
+	"get CC1101 configuration" => $CULSERVER_OP_GETCC1101CONFIG,
+	"start bootloader" => $CULSERVER_OP_BOOTLOADER,
 );
 
-
-
-while($#ARGV>=0) {
-	my $arg= $ARGV[0];
-
-	if($arg eq "-c") {
-		$mode= "client";
+sub
+printbuffer($) {
+	my $b= shift;
+	my $l= length($b);
+	my $i;
+	for($i= 0; $i< $l; $i++) {
+		my $c= substr($b, $i, 1);
+		if(!($i % 0x010)) {
+			printf("\n\t0x%04x:  ", $i);
+		}
+		printf(" %02x", ord($c));
 	}
-	elsif($arg eq "-s") {
-		$mode= "server";
-	}
-	shift @ARGV;
+	print "\n";
 }
 
-print "Entering $mode mode.\n";
 
-
-if($mode eq "client") {
-
-	#
-	# client
-	#
 
 	socket(SOCKET, PF_INET, SOCK_DGRAM, getprotobyname('udp'))
 		or die "socket: $@";
@@ -127,22 +130,29 @@ if($mode eq "client") {
 
 		if($exitcode == $ACK) {
 			print "< ACK operation= $operation " .
-				"token= $tokenrecv length= $length (" .
-				unpack("H*", $text) . ")\n";
-			if($operation eq $CULSERVER_OP_ECHO) {
-				print $text . "\n";
-			} elsif($operation eq $CULSERVER_OP_IP) {
+				"token= $tokenrecv length= $length";
+			printbuffer($text);
+			if($operation eq $CULSERVER_OP_GETTIME) {
+				my $elapsed_time= (($b[3]*256+$b[2])*256+$b[1])*256+$b[0];
+				print "Elapsed time: $elapsed_time sec\n";
+			} elsif($operation eq $CULSERVER_OP_GETIP) {
 				printf("%d.%d.%d.%d\n", $b[0],$b[1],$b[2],$b[3]);
-			} elsif($operation eq $CULSERVER_OP_STAT) {
+			} elsif($operation eq $CULSERVER_OP_GETSTAT) {
 				printf("RNDIS  in= %3d out= %3d\nCC1101 in= %3d out= %3d\n", $b[0],$b[1],$b[2],$b[3]);
-			} elsif($operation eq $CULSERVER_OP_CC1101INFO) {
-				printf("Partnum= %d\n", $b[0]);
-				printf("Version= %d\n", $b[1]);
-				printf("FreqEst= %d\n", $b[2]);
-				printf("Wortime= %d\n", $b[7]*256+$b[6]);
-				printf("TX     = %d bytes\n", $b[10]);
-				printf("RX     = %d bytes\n", $b[11]);
-			}
+			} elsif($operation eq $CULSERVER_OP_GETCC1101STATUS) {
+				printf("Part number for CC1101= %d\n", $b[0]);
+				printf("Current version number= %d\n", $b[1]);
+				printf("Frequency Offset Estimate= %d\n", $b[2]);
+				printf("Demodulator estimate for Link Quality= %d\n", $b[3]);
+				printf("Received signal strength indication= %d\n", $b[4]);
+				printf("Control state machine state= %d\n", $b[5]);
+				printf("WOR timer= %d\n", $b[6]*256+$b[7]);
+				printf("Current GDOx status and packet status= %d\n", $b[8]);
+				printf("Current setting from PLL calibration module= %d\n", $b[9]);
+				printf("Underflow and number of bytes in TX FIFO= %d bytes\n", $b[10]);
+				printf("Overflow and number of bytes in RX FIFO= %d bytes\n", $b[11]);
+				printf("Last RC oscillator calibration result= %d\n", $b[12]*256+$b[13]);
+}
 
 		} elsif($exitcode == $NAK) {
 			print "< NAK\n";
@@ -150,28 +160,6 @@ if($mode eq "client") {
 			die "< Illegal exit code";
 		}
 	}
-
-
-} elsif($mode eq "server") {
-
-	#
-	# server
-	#
-
-	my $socket= IO::Socket::INET->new(
-		LocalPort => $LOCALPORT,
-		Proto     => "udp")
-		or die "socket: $@";
-
-	my $text;
-
-	while($socket->recv($text, $MAXLEN)) {
-		print "$text";
-		$socket->send($text) or die "send: $!";
-	} die "recv: $!";
-
-
-}
 
 
 

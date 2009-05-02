@@ -9,9 +9,15 @@
 #include "cc1100.h"
 #include "Ethernet.h"
 #include "IP.h"
+#include "UDP.h"
 #include "If_RNDIS.h"
 #include "If_CC1101.h"
 #include "led.h"
+#include "version.h"
+#include "config.h"
+#include "clock.h"
+#include "boot.h"
+#include "extras.h"
 #include <util/delay.h>
 
 int16_t CULServer_ProcessPacket(void* IPHeaderInStart, void* CULServerRequestStart, void* CULServerReplyStart)
@@ -20,53 +26,59 @@ int16_t CULServer_ProcessPacket(void* IPHeaderInStart, void* CULServerRequestSta
         IP_Header_t*   IPHeaderIN    = (IP_Header_t*)IPHeaderInStart;
 	CULServer_Request_t*	Request= (CULServer_Request_t*)CULServerRequestStart;
 	CULServer_Reply_t*	Reply  = (CULServer_Reply_t*)CULServerReplyStart;
+	clock_time_t	elapsed_seconds;
+
+
 
 	Reply->ExitCode= ACK;
+	Reply->Length= 0;
+	memset(Reply->Result, 0, MAXLEN);
 	switch(Request->Operation) {
-		case CULSERVER_OP_ECHO:
-			if(Reply->Length> MAXLEN) {
-				Reply->Length= MAXLEN;
-			}
+		case CULSERVER_OP_GETVERSION:
+			Reply->Length= 2;
+			Reply->Result[0]= VERSION >> 8;
+			Reply->Result[1]= VERSION && 0xff;
 			break;
-		case CULSERVER_OP_IP:
-			memset(Reply->Result, 0, MAXLEN);
+		case CULSERVER_OP_GETTIME:
+			elapsed_seconds= clock_time();
+			Reply->Length= sizeof(elapsed_seconds);
+			memcpy(Reply->Result, &elapsed_seconds, Reply->Length);
+			break;
+		case CULSERVER_OP_TEST:
+			Reply->Length= 0;
+			extraflag= EXTRA_TEST;
+			break;
+		case CULSERVER_OP_SETDFLTCFG:
+			Reply->Length= 0;
+			factory_reset();
+			break;
+		case CULSERVER_OP_GETIP:
 			Reply->Length= 4;
 			for(uint8_t i= 0; i<= 3; i++) {
 				Reply->Result[i]= ServerIPAddress.Octets[i];
 			}
 			break;
-		case CULSERVER_OP_STAT:
-			memset(Reply->Result, 0, MAXLEN);
+		case CULSERVER_OP_GETSTAT:
 			Reply->Length= 4;
 			Reply->Result[0]= FrameCount_If_RNDIS_IN;
 			Reply->Result[1]= FrameCount_If_RNDIS_OUT;
 			Reply->Result[2]= FrameCount_If_CC1101_IN;
 			Reply->Result[3]= FrameCount_If_CC1101_OUT;
 			break;
-		case CULSERVER_OP_CC1101INFO:
-			memset(Reply->Result, 0, MAXLEN);
-			Reply->Length= 12;
-			Reply->Result[ 0]= cc1100_readReg(CC1100_PARTNUM);
-			Reply->Result[ 1]= cc1100_readReg(CC1100_VERSION);
-			Reply->Result[ 2]= cc1100_readReg(CC1100_FREQEST);
-			Reply->Result[ 3]= cc1100_readReg(CC1100_LQI);
-			Reply->Result[ 4]= cc1100_readReg(CC1100_RSSI);
-			Reply->Result[ 5]= cc1100_readReg(CC1100_MARCSTATE);
-			Reply->Result[ 6]= cc1100_readReg(CC1100_WORTIME0);
-			Reply->Result[ 7]= cc1100_readReg(CC1100_WORTIME1);
-			Reply->Result[ 8]= cc1100_readReg(CC1100_PKTSTATUS);
-			Reply->Result[ 9]= cc1100_readReg(CC1100_VCO_VC_DAC);
-			Reply->Result[10]= cc1100_readReg(CC1100_TXBYTES);
-			Reply->Result[11]= cc1100_readReg(CC1100_RXBYTES);
+		case CULSERVER_OP_GETCC1101STATUS:
+			Reply->Length= CC1100_STATUS_SIZE_R;
+			ccGetStatus(Reply->Result);
+			break;
+		case CULSERVER_OP_GETCC1101CONFIG:
+			Reply->Length= CC1100_CONFIG_SIZE_R;
+			ccGetConfig(Reply->Result);
 			break;
 		case CULSERVER_OP_CC1101SEND:
-			memset(Reply->Result, 0, MAXLEN);
 			Reply->Length= 1;
 			Reply->Result[ 0]= CC1101_TESTPACKETSIZE;
 			CC1101_TX_test();
 			break;
 		case CULSERVER_OP_BLINK:
-			memset(Reply->Result, 0, MAXLEN);
 			Reply->Length= 1;
 			Reply->Result[ 0]= 5;
 			for(int i= 0; i< 5; i++) {
@@ -76,14 +88,18 @@ int16_t CULServer_ProcessPacket(void* IPHeaderInStart, void* CULServerRequestSta
 				for(int j= 0; j< 25; j++) { _delay_ms(10); }
 			}
 			break;
+		case CULSERVER_OP_BOOTLOADER:
+			Reply->Length= 0;
+			prepare_boot();
+			break;
 		default:
 			Reply->ExitCode= NAK;
 	}
 
-	/* Alter the incomming IP packet header so that the corrected IP source and destinations are used - this means that
-	   when the response IP header is generated, it will use the corrected addresses and not the null/broatcast addresses */
+	/* Alter the incoming IP packet header so that the corrected IP source and destinations are used - this means that
+	   when the response IP header is generated, it will use the corrected addresses and not the null/broadcast addresses */
 	IPHeaderIN->DestinationAddress = ServerIPAddress;
 
-	return sizeof(CULServer_Reply_t);
+	return 4+Reply->Length; //sizeof(CULServer_Reply_t);
 }
 
