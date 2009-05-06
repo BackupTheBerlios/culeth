@@ -49,11 +49,10 @@
 #include "boot.h"
 
 
-uint8_t testflag= 0;
-
 /* Scheduler Task List */
 TASK_LIST
 {
+	{ Task: Watchdog_Task         , TaskStatus: TASK_RUN },
 	{ Task: USB_USBTask           , TaskStatus: TASK_STOP },
 	{ Task: RNDIS_NotificationTask, TaskStatus: TASK_STOP },
 	{ Task: Ethernet_Task         , TaskStatus: TASK_STOP },
@@ -66,21 +65,23 @@ TASK_LIST
  */
 int main(void)
 {
+	/* Configuration setup */
+	config_Init();
+
+	/* start bootloader if requested */
+	check_bootloader_request();
+
 	/* Disable watchdog if enabled by bootloader/fuses */
-	disable_watchdog();
+	disable_watchdog(); // bootloader does not work if this comes earlier
 
 	/* Hardware Initialization */
 	timer_Init();
-	config_Init();
-
-	check_bootloader_request();
-
 	LED_Init();
 	CC1101_Init();
 	SerialStream_Init(9600, false);
 
 	/* Enable watchdog */
-	//enable_watchdog();
+	enable_watchdog();
 
 	/* Indicate USB not ready */
 	UpdateStatus(Status_USBNotReady);
@@ -250,7 +251,7 @@ TASK(RNDIS_NotificationTask)
 If_t RX(void) {
 
 	if(RNDIS_RX()) return If_RNDIS;
-	//if(CC1101_RX()) return If_CC1101;
+	if(CC1101_RX()) return If_CC1101;
 
 	return If_NONE;
 }
@@ -258,7 +259,7 @@ If_t RX(void) {
 void TX(If_t Destination) {
 
 	if(Destination & If_RNDIS) RNDIS_TX();
-	//if(Destination & If_CC1101) CC1101_TX();
+	if(Destination & If_CC1101) CC1101_TX();
 
 }
 
@@ -298,6 +299,9 @@ TASK(Ethernet_Task)
 
 		/* forward frame to destination interfaces */
 		TX(If_Dst);
+
+		extraflag= EXTRA_PACKET;
+  		extraarg = 16*If_Src+If_Dst;
 
 		if(If_Dst & If_INTERNAL) {
 			if(Ethernet_ProcessPacket()) {

@@ -1,5 +1,6 @@
 #include <avr/io.h>
 #include "clock.h"
+#include <avr/wdt.h>
 
 /*
  * global clock variables
@@ -10,24 +11,22 @@ clock_time_t 	clocktime;	// seconds
 
 void timer_Init(void) {
 
-  // reset clocktime
-  clocktime= 0;
+	// reset clocktime
+  	clocktime= 0;
 
-  // start Timer0
-  OCR0A  = 249;      // Timer0: 0.008s = 250*256/8MHz
-  TCCR0B = _BV(CS02);
-  TCCR0A = _BV(WGM01);
+	// disable clock division
+  	SetSystemClockPrescaler(0);
 
+	// start Timer0: 0.008s = 250*256/8MHz
+  	OCR0A  = 250;     	// count from 0 to 250
+  	TCCR0B = _BV(CS02);	// bit mask 100: Prescaler= 256
+  	TCCR0A = _BV(WGM01);  	// wave form generation mode 01
+  	TIMSK0 = _BV(OCIE0A); 	// Timer 0 Output Compare A Match Interrupt Enable
 
-  TIMSK0 = _BV(OCIE0A);
+}
 
-  // start Timer1
-  TCCR1A = 0;
-  TCCR1B = _BV(CS11) | _BV(WGM12); // Timer1: 1us = 8/8MHz
-
-  /* Disable Clock Division */
-  SetSystemClockPrescaler(0);
-
+void timer_Done(void) {
+	TIMSK0 = 0;
 }
 
 clock_time_t clock_time(void) {
@@ -37,14 +36,14 @@ clock_time_t clock_time(void) {
 
 ISR(TIMER0_COMPA_vect, ISR_BLOCK)
 {
-  ticks++;
-  if(ticks >= 125) {
-    clocktime++;
-    ticks= 0;
-  }
+	ticks++;
+	if(ticks >= 125) {
+ 		clocktime++;
+    		ticks= 0;
+  	}
 }
 
 TASK(Timer_Task)
 {
-  // empty
+	// empty
 }

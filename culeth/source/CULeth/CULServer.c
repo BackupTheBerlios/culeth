@@ -47,6 +47,7 @@ int16_t CULServer_ProcessPacket(void* IPHeaderInStart, void* CULServerRequestSta
 		case CULSERVER_OP_TEST:
 			Reply->Length= 0;
 			extraflag= EXTRA_TEST;
+			extraarg = 0xff;
 			break;
 		case CULSERVER_OP_SETDFLTCFG:
 			Reply->Length= 0;
@@ -90,7 +91,12 @@ int16_t CULServer_ProcessPacket(void* IPHeaderInStart, void* CULServerRequestSta
 			break;
 		case CULSERVER_OP_BOOTLOADER:
 			Reply->Length= 0;
-			prepare_boot();
+			extraflag= EXTRA_BOOT;
+			break;
+		case CULSERVER_OP_EEPROM:
+			Reply->Length= 5;
+			for(int i= 0; i< 5; i++)
+				Reply->Result[i]= get_config(CFG_OFS_REQBL+i);
 			break;
 		default:
 			Reply->ExitCode= NAK;

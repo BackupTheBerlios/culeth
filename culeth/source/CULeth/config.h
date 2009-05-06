@@ -7,13 +7,15 @@
  * configuration constants
  */
 
-#define CFG_MAGIC		0x1969	// eeprom magic
-#define CFG_VERSION		0x0001	// config version
-#define CFG_REQBL		0xb0	// request bootloader
-#define CFG_NOREQBL		0x00	// do not request bootloader
+#define CFG_MAGIC		(uint16_t)0x1969	// eeprom magic
+#define CFG_VERSION		(uint16_t)0x0001	// config version
+#define CFG_REQBL		0xb0			// request bootloader
+#define CFG_NOREQBL		0x00			// do not request bootloader
 
 /*
  * configuration offsets
+ *
+ * notice: the processor is little-endian, i.e. we have 0x69 at 0x1ff
  */
 
 #define CFG_OFS_CC1101		0x100

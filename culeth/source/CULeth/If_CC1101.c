@@ -57,8 +57,10 @@ bool CC1101_RX(void)
 		ccStrobe(CC1100_SNOP);
 		ccStrobe(CC1100_SRX);
 
-    		FrameCount_If_CC1101_IN++;
-    		if(size) Frame.FrameLength= finalize_UDP_Packet(Frame.FrameData, size);
+    		if(size) {
+    			Frame.FrameLength= finalize_UDP_Packet(Frame.FrameData, size);
+	    		FrameCount_If_CC1101_IN++;
+	    	}
 
 		return size;
 	;

@@ -63,53 +63,6 @@ int16_t UDP_ProcessUDPPacket(void* IPHeaderInStart, void* UDPHeaderInStart, void
 const IP_Address_t  TargetIPAddress     = {TARGET_IP_ADDRESS};
 
 
-uint16_t build_UDP_TestPacket(uint8_t* Data) {
-
-	/*
-	UDP_Packet_t*	UDPPacket= (UDP_Packet_t*) Data;
-
-	const MAC_Address_t  AdapterMACAddress     = {ADAPTER_MAC_ADDRESS};
-
-	// build Ethernet Frame
-	memcpy(&UDPPacket->FrameHeader.Source, &ServerMACAddress, sizeof(MAC_Address_t));
-	memcpy(&UDPPacket->FrameHeader.Destination, &AdapterMACAddress, sizeof(MAC_Address_t));
-	UDPPacket->FrameHeader.EtherType= SwapEndian_16(ETHERTYPE_IPV4);
-
-	// build IP Header
-	UDPPacket->IPHeader.TotalLength        = SwapEndian_16(sizeof(IP_Header_t) + 8+ TEST_PAYLOAD_SIZE);
-	UDPPacket->IPHeader.TypeOfService      = 0;
-	UDPPacket->IPHeader.HeaderLength       = (sizeof(IP_Header_t) / sizeof(uint32_t));
-	UDPPacket->IPHeader.Version            = 4;
-	UDPPacket->IPHeader.Flags              = 0;
-	UDPPacket->IPHeader.FragmentOffset     = 0;
-	UDPPacket->IPHeader.Identification     = 0;
-	UDPPacket->IPHeader.HeaderChecksum     = 0;
-	UDPPacket->IPHeader.Protocol           = PROTOCOL_UDP;
-	UDPPacket->IPHeader.TTL                = DEFAULT_TTL;
-	UDPPacket->IPHeader.SourceAddress      = ServerIPAddress;
-	UDPPacket->IPHeader.DestinationAddress = TargetIPAddress;
-	UDPPacket->IPHeader.HeaderChecksum     = Ethernet_Checksum16(&UDPPacket->IPHeader, sizeof(IP_Header_t));
-
-	// build UDP header
-	UDPPacket->UDPHeader.SourcePort= 0;
-	UDPPacket->UDPHeader.DestinationPort= SwapEndian_16(7073);
-	UDPPacket->UDPHeader.Length= SwapEndian_16(8+TEST_PAYLOAD_SIZE);
-	UDPPacket->UDPHeader.Checksum= 0; // no checksum
-
-	// build UDP message
-	for(int i= 0; i<= TEST_PAYLOAD_SIZE; i++) {
-		UDPPacket->UDPMessage[i]= i;
-	}
-
-	return sizeof(UDP_Packet_t)+TEST_PAYLOAD_SIZE-MAX_PAYLOAD_SIZE;
-	*/
-	uint8_t* Payload= get_UDP_Payload(Frame.FrameData);
-	// build UDP message
-	for(int i= 0; i< TEST_PAYLOAD_SIZE; i++) {
-		Payload[i]= i;
-	}
-	return finalize_UDP_Packet(Frame.FrameData, TEST_PAYLOAD_SIZE);
-}
 
 uint8_t* get_UDP_Payload(uint8_t* Data) {
 

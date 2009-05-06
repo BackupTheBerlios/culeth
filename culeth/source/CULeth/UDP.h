@@ -56,7 +56,6 @@ extern const IP_Address_t  TargetIPAddress;
 #define TARGET_PORT	7073
 
 
-#define TEST_PAYLOAD_SIZE	16
 #define MAX_PAYLOAD_SIZE 	64
 
 

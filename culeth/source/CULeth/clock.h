@@ -7,6 +7,7 @@ typedef uint32_t clock_time_t;	// seconds
 clock_time_t clock_time(void);
 
 void timer_Init(void);
+void timer_Done(void);
 
 TASK(Timer_Task);
 

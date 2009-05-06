@@ -3,33 +3,38 @@
 #include <stdint.h>
 
 
-
 /*
  * EEPROM functionality
  */
 
+__attribute__((__noinline__))
 void eeprom_w1(uint16_t addr, uint8_t byte) {
-	eeprom_write_byte((uint8_t *)addr, byte);
+	eeprom_write_byte((uint8_t*)addr, byte);
 }
 
+__attribute__((__noinline__))
 uint8_t eeprom_r1(uint16_t addr) {
-	return eeprom_read_byte((uint8_t *)addr);
+	return eeprom_read_byte((uint8_t*)addr);
 }
 
+__attribute__((__noinline__))
 void eeprom_w2(uint16_t addr, uint16_t word) {
-	eeprom_write_word((uint16_t *)addr, word);
+	eeprom_write_word((uint16_t*)addr, word);
 }
 
-uint8_t eeprom_r2(uint16_t addr) {
-	return eeprom_read_word((uint16_t *)addr);
+__attribute__((__noinline__))
+uint16_t eeprom_r2(uint16_t addr) {
+	return eeprom_read_word((uint16_t*)addr);
 }
 
+__attribute__((__noinline__))
 void eeprom_wn(uint16_t addr, uint8_t *block, uint8_t size) {
-	eeprom_write_block(block, (uint8_t *)addr, size);
+	eeprom_write_block(block, (uint16_t*)addr, size);
 }
 
+__attribute__((__noinline__))
 void eeprom_rn(uint16_t addr, uint8_t *block, uint8_t size) {
-	eeprom_read_block(block, (uint8_t *)addr, size);
+	eeprom_read_block(block, (uint16_t*)addr, size);
 }
 
 /*

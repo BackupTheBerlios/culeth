@@ -22,6 +22,7 @@ my $CULSERVER_OP_CC1101SEND 	= 'p';
 my $CULSERVER_OP_BLINK	 	= 'b';
 my $CULSERVER_OP_TEST		= '?';
 my $CULSERVER_OP_BOOTLOADER	= '>';
+my $CULSERVER_OP_EEPROM		= 'e';
 
 my %CULSERVER_COMMANDS= (
 	"get remote ip address" => $CULSERVER_OP_GETIP,
@@ -33,7 +34,41 @@ my %CULSERVER_COMMANDS= (
 	"test feature" => $CULSERVER_OP_TEST,
 	"get CC1101 configuration" => $CULSERVER_OP_GETCC1101CONFIG,
 	"start bootloader" => $CULSERVER_OP_BOOTLOADER,
+	"get eeprom" => $CULSERVER_OP_EEPROM,
 );
+
+my @MARCSTATE= (
+	"SLEEP",
+	"IDLE",
+	"XOFF",
+	"VCOON_MC",
+	"REGON_MC",
+	"MANCAL",
+	"VCOON",
+	"REGON",
+	"STARTCAL",
+	"BWBOOST",
+	"FS_LOCK",
+	"IFADCON",
+	"ENDCAL",
+	"RX",
+	"RX_END",
+	"RX_RST",
+	"TXRX_SWITCH",
+	"RXFIFO_OVERFLOW",
+	"FSTXON",
+	"TX",
+	"TX_END",
+	"RXTX_SWITCH",
+	"TXFIFO_UNDERFLOW",
+ );
+
+
+sub
+bit($$) {
+	my ($byte, $bit)= @_;
+	return(($byte >> $bit) & 1);
+}
 
 sub
 printbuffer($) {
@@ -145,9 +180,16 @@ printbuffer($) {
 				printf("Frequency Offset Estimate= %d\n", $b[2]);
 				printf("Demodulator estimate for Link Quality= %d\n", $b[3]);
 				printf("Received signal strength indication= %d\n", $b[4]);
-				printf("Control state machine state= %d\n", $b[5]);
+ 				printf("Control state machine state= %d (%s)\n", $b[5], $MARCSTATE[$b[5]]);
 				printf("WOR timer= %d\n", $b[6]*256+$b[7]);
 				printf("Current GDOx status and packet status= %d\n", $b[8]);
+				printf("  CRC OK         = %d\n", bit($b[8], 7));
+				printf("  Carrier Sense  = %d\n", bit($b[8], 6));
+				printf("  PQT reached    = %d\n", bit($b[8], 5));
+				printf("  Channel clear  = %d\n", bit($b[8], 4));
+				printf("  Sync word found= %d\n", bit($b[8], 3));
+				printf("  GDO2           = %d\n", bit($b[8], 2));
+				printf("  GDO0           = %d\n", bit($b[8], 0));
 				printf("Current setting from PLL calibration module= %d\n", $b[9]);
 				printf("Underflow and number of bytes in TX FIFO= %d bytes\n", $b[10]);
 				printf("Overflow and number of bytes in RX FIFO= %d bytes\n", $b[11]);

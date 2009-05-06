@@ -64,6 +64,7 @@
 
 		/** Maximum size of an incomming or outgoing Ethernet frame in bytes */
 		#define ETHERNET_FRAME_SIZE_MAX          180
+
 		// 1500
 
 		/** Minimum size of an Ethernet packet in bytes, to conform to the Ethernet V2 packet standard */

@@ -1,20 +1,12 @@
-/* Boop
-const PROGMEM uint8_t conf[0x2F] =
-{
-0x29 , 0x2E , 0x06 , 0x47 , 0xD3 , 0x91 , 0x3E , 0x1A ,
-0x45 , 0x01 , 0x01 , 0x06 , 0x00 , 0x10 , 0xA9 , 0xD6 ,
-0x8A , 0x75 , 0x13 , 0x22 , 0xC1 , 0x35 , 0x04 , 0x0C ,
-0x38 , 0x16 , 0x6C , 0x43 , 0x40 , 0x91 , 0x46 , 0x50 ,
-0x78 , 0x56 , 0x10 , 0xA9 , 0x0A , 0x00 , 0x11 , 0x41 ,
-0x00 , 0x57 , 0x7F , 0x3F , 0x98 , 0x31 , 0x0B
-};
-*/
+
 
 #include <stdio.h>
 #include <string.h>
 #include <avr/pgmspace.h>
 #include <util/delay.h>
 #include "cc1100.h"
+
+
 
 PROGMEM prog_uint8_t CC1100_PA[] = {
 
@@ -33,8 +25,95 @@ PROGMEM prog_uint8_t CC1100_PA[] = {
   0x00,0x32,0x38,0x3f,0x3f,0x3f,0x3f,0x3f
 };
 
+/*
+	CUL	: 26 MHz crystal
+	Betty	: 27 MHz crystal
+*/
+
+/* Boop settings adapted to CUL */
+const PROGMEM uint8_t CC1100_CFG[CC1100_CONFIG_SIZE_W] =
+{
+0x29 ,	// IOCFG2	GDO2_INV= 0, GDO2_CFG= 0x29 (CHP_RDYn)
+0x2E ,	// IOCFG1	GDO_DS= 0, GDO1_INV= 0, GDO1_CFG= 0x2E (3-state)
+0x06 ,	// IOCFG0	TEMP_SENSOR_ENABLE= 0, GDO0_INV= 0, GDO0_CFG= 0x06
+	//		(Asserts when sync word has been sent / received, and
+	//		de-asserts at the end of the packet. In RX, the pin will
+	//		de-assert when the optional address check fails or the
+	//		RX FIFO overflows. In TX the pin will de-assert if the
+	//		TX FIFO underflows.
+0x47 ,	// FIFOTHR	ADC_RETENTION = 1,
+	//		CLOSE_IN_RX= FIFO_THR= 0x07 (33 bytes in TX FIFO,
+	//		32 Bytes in RX FIFO)
+0xD3 ,	// SYNC1	SYNC= 0xD391 (16-bit sync word)
+0x91 ,	// SYNC0
+0x3E ,	// PKTLEN	PACKET_LENGTH= 0x3E (fixed or maximum packet length)
+0x1A ,	// PKTCTRL1	PQT= 0, CRC_AUTOFLUSH= 0, APPEND_STATUS= 0, ADR_CHK= 0x02
+	//		(address check and 0x00 broadcast)
+
+0x45 ,	// PKTCTRL0	WHITE_DATA= 1 (whitening on), PKT_FORMAT= 0x00 (use FIFOs
+	//		for RX and TX), CRC_EN= 1 (CRC calculation in RX and CRC
+	//		check in RX), LENGTH_CONFIG= 0x01 (variable packet length
+	//		mode)
+0x01 ,	// ADDR		DEVICE_ADDR= 0x01 (address for packet filtration)
+0x01 ,	// CHANNR	CHAN= 0x01 (channel number)
+0x06 ,	// FSCTRL1	FREQ_IF= 0x06 (27 MHz/2^10*6= 158.203 kHz)
+	//		(26 MHz/2^10*6= 152.344 kHz)
+0x00 ,	// FSCTRL0	FREQOFF= 0
+0x10 ,	// FREQ2	FREQ= 0x10A9D6 (1,092,054 * 26 MHz / 65536= 433.249 MHz)
+0xA9 ,	// FREQ1
+0xD6 ,	// FREQ0
+
+0x8A ,	// MDMCFG4	CHANBW_E= 0x10, CHANBW_M= 0x00, DRATE_E= 0x0A
+0x75 ,	// MDMCFG3	DRATE_M= 0x75
+0x13 ,	// MDMCFG2	DEM_DCFILT_OFF= 0, MOD_FORMAT= 0x01 (GFSK)
+	//		MANCHESTER= 0, SYNC_MODE= 0x03 (30/32 sync word bits)
+0x22 ,	// MDMCFG1	FEC_EN= 0, NUM_PREAMBLE= 0x02 (minimum number of preamble
+	//		bits), CHSNSPC_E= 0x02 (2 bit exponent of channel spacing)
+0xC1 ,	// MDMCFG0	CHANSPC_M= 0xC1
+0x35 ,	// DEVIATN	DEVIATION_E= 0x03, DEVIATION_M= 0x05
+0x04 ,	// MSCM2	RX_TIME_RSSI= 0, RX_TIME_QUAL= 0, RX_TIME= 0x04
+0x0C ,	// MSCM1	CCA_MODE= 0x0 (always), RXOFF_MODE= 0x3 (stay in RX after
+	//		finishing packet reception), TXOFF_MODE= 0x0 (IDLE after
+	//		a packet has been sent)
+
+0x38 ,	// MSCM0	FS_AUTOCAL= 0x3, PO_TIMEOUT= 0x2, PIN_CTRL_EN= 0,
+	//		XOS_FORCE_ON= 0
+0x16 ,	// FOCCFG	FOC_BS_CS_GATE= 0, FOC_PRE_K= 0x2, FOC_POST_K= 1,
+	//		FOC_LIMIT= 0x2
+0x6C ,	// BSCFG
+0x43 ,	// AGCCTRL2
+0x40 ,	// AGCCTRL1
+0x91 ,	// AGCCTRL0
+0x46 ,	// WOREVT1
+0x50 ,	// WOREVT0
+
+0x78 ,	// WORCTRL
+0x56 ,  // FREND1
+0x10 ,	// FREND0
+0xA9 ,	// FSCAL3
+0x0A ,	// FSCAL2
+0x00 ,	// FSCAL1
+0x11 ,	// FSCAL0
+0x41 ,	// RCCTRL1	RCCTRL= 0x41 (RC oscillator configuration)
+
+0x00 ,	// RCCTRL0
+0x57 ,	// FSTEST
+0x7F ,	// PTEST
+0x3F ,	// AGCTEST
+0x98 ,	// TEST2
+0x31 ,	// TEST1
+0x0B	// TEST0
+};
 
 
+ /*
+ Conf1: SmartRF Studio:
+   Xtal: 26Mhz, RF out: 0dB, PA ramping, Dev:5kHz, Data:1kHz, Modul: ASK/OOK,
+   RF: 868.35MHz, Chan:350kHz, RX Filter: 325kHz
+   SimpleRX: Async, SimpleTX: Async+Unmodulated
+ */
+
+/*
 PROGMEM prog_uint8_t CC1100_CFG[CC1100_CONFIG_SIZE_W] = {
 //Active                  Our FT  SmartRF Studio
    0x0D, //*00 IOCFG2      0D  0D *0B // GDO2 as serial output
@@ -50,9 +129,9 @@ PROGMEM prog_uint8_t CC1100_CFG[CC1100_CONFIG_SIZE_W] = {
    0x00, // 0A CHANNR      00  00  00
    0x06, // 0B FSCTRL1     06  06  06
    0x00, // 0C FSCTRL0     00  00  00
-   0x21, // 0D FREQ2       21  21  21
-   0x65, // 0E FREQ1       65  65  65
-   0xe8, // 0F FREQ0       E8  e8  e8
+   0x10, // 0D FREQ2       21  21  21
+   0xA9, // 0E FREQ1       65  65  65
+   0xD6, // 0F FREQ0       E8  e8  e8
    0x55, // 10 MDMCFG4     55  55  55
    0xe4, // 11 MDMCFG3     43 *e4  43
    0x30, //*12 MDMCFG2     30 *30 *B0  // DEM_DCFILT_OFF
@@ -79,13 +158,7 @@ PROGMEM prog_uint8_t CC1100_CFG[CC1100_CONFIG_SIZE_W] = {
    0x41, // 27 RCCTRL1     41  41  41
    0x00, // 28 RCCTRL0     00  00  00
 };
- /*
- Conf1: SmartRF Studio:
-   Xtal: 26Mhz, RF out: 0dB, PA ramping, Dev:5kHz, Data:1kHz, Modul: ASK/OOK,
-   RF: 868.35MHz, Chan:350kHz, RX Filter: 325kHz
-   SimpleRX: Async, SimpleTX: Async+Unmodulated
- */
-
+*/
 
 //--------------------------------------------------------------------
 uint8_t
@@ -126,7 +199,7 @@ void ccSetConfig(void) {
   CC1100_ASSERT;                             // upload configuration
   cc1100_sendbyte(0 | CC1100_WRITE_BURST);
   for(uint8_t i= 0; i< CC1100_CONFIG_SIZE_W; i++) {
-    cc1100_sendbyte(CC1100_CFG[i]);
+    cc1100_sendbyte(__LPM(CC1100_CFG+i));
   }
   CC1100_DEASSERT;
 
@@ -163,41 +236,40 @@ void ccGetStatus(uint8_t* data) {
 }
 
 //--------------------------------------------------------------------
-void
-ccInitChip(void)
+void ccResetChip(void)
 {
 
-  SET_BIT(CC1100_CS_DDR, CC1100_CS_PIN);     // CS as output
+	//
+	// reset
+	//
+  	CC1100_DEASSERT;	// Toggle chip select signal
+  	_delay_us(30);
+  	CC1100_ASSERT;
+  	_delay_us(30);
+  	CC1100_DEASSERT;
+  	_delay_us(45);
 
-  //
-  // reset
-  //
-  CC1100_DEASSERT;                           // Toggle chip select signal
-  _delay_us(30);
-  CC1100_ASSERT;
-  _delay_us(30);
-  CC1100_DEASSERT;
-  _delay_us(45);
+  	ccStrobe(CC1100_SRES);	// Send SRES command
+  	_delay_us(100);
 
-  ccStrobe(CC1100_SRES);                   // Send SRES command
-  _delay_us(100);
-
-
-  ccSetConfig();                  // load configuration
-
-
-  CC1100_ASSERT;                             // setup PA table
-  cc1100_sendbyte(CC1100_PATABLE | CC1100_WRITE_BURST);
-  for (uint8_t i= 0; i< 8; i++) {
-    cc1100_sendbyte(CC1100_PA[7*8+i]);
-  }
-  CC1100_DEASSERT;
-
-  ccStrobe(CC1100_SCAL);
-  _delay_ms(1);
+	CC1100_DEASSERT;
 }
 
 
+//--------------------------------------------------------------------
+void ccInitChip(void)
+{
+
+	SET_BIT(CC1100_CS_DDR, CC1100_CS_PIN);     // CS as output
+	CC1100_DEASSERT;
+
+	ccResetChip();
+
+	ccSetConfig();                  // load configuration
+
+	ccStrobe(CC1100_SCAL);
+  	_delay_ms(1);
+}
 
 //--------------------------------------------------------------------
 void
@@ -206,7 +278,7 @@ ccTX(void)
   uint8_t cnt = 0xff;
   EIMSK  &= ~_BV(CC1100_INT);
 
-  while (cnt-- && (cc1100_readReg( CC1100_MARCSTATE ) & 0x1f) != 19) {
+  while (cnt-- && (cc1100_readReg(CC1100_MARCSTATE) & 0x1f) != 19) {
     ccStrobe(CC1100_STX);
   }
 }

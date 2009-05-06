@@ -16,3 +16,9 @@ void disable_watchdog(void) {
 	MCUSR &= ~(1 << WDRF);
 	wdt_disable();
 }
+
+TASK(Watchdog_Task)
+{
+	// reset watchdog
+	wdt_reset();
+}

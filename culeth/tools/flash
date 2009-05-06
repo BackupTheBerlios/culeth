@@ -5,4 +5,16 @@
 # - flashing the new firmware
 # - restarting CUL
 #
-dfu-programmer at90usb162 erase && dfu-programmer at90usb162 flash CULeth.hex && dfu-programmer at90usb162 start
+
+#
+PROGRAMMER=dfu-programmer
+MCU=at90usb162
+IMAGE=CULeth.hex
+
+# ---------
+if [ ! -f $IMAGE ]; then
+	echo "$IMAGE: No such file." >&2
+	exit 1
+fi
+P="$PROGRAMMER $MCU"
+$P erase && $P flash $IMAGE && $P start

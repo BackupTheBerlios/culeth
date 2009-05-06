@@ -27,6 +27,7 @@
 		#define CULSERVER_OP_BLINK      'b'
 		#define CULSERVER_OP_TEST       '?'
 		#define CULSERVER_OP_BOOTLOADER '>'
+		#define CULSERVER_OP_EEPROM     'e'
 
 		#define ACK			6
 		#define NAK			21
