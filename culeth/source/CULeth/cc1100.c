@@ -1,12 +1,14 @@
 
-
 #include <stdio.h>
 #include <string.h>
 #include <avr/pgmspace.h>
 #include <util/delay.h>
+#include "spi.h"
 #include "cc1100.h"
 
 
+//
+// see swra141/source_rev_113/app/link_poll/
 
 PROGMEM prog_uint8_t CC1100_PA[] = {
 
@@ -30,7 +32,8 @@ PROGMEM prog_uint8_t CC1100_PA[] = {
 	Betty	: 27 MHz crystal
 */
 
-/* Boop settings adapted to CUL */
+/* Boop settings adapted to CUL:
+	frequency adapted, everything else is the same 	*/
 const PROGMEM uint8_t CC1100_CFG[CC1100_CONFIG_SIZE_W] =
 {
 0x29 ,	// IOCFG2	GDO2_INV= 0, GDO2_CFG= 0x29 (CHP_RDYn)
@@ -75,7 +78,11 @@ const PROGMEM uint8_t CC1100_CFG[CC1100_CONFIG_SIZE_W] =
 0x0C ,	// MSCM1	CCA_MODE= 0x0 (always), RXOFF_MODE= 0x3 (stay in RX after
 	//		finishing packet reception), TXOFF_MODE= 0x0 (IDLE after
 	//		a packet has been sent)
-
+/*
+0x0F ,	// MSCM1	CCA_MODE= 0x0 (always), RXOFF_MODE= 0x3 (stay in RX after
+	//		finishing packet reception), TXOFF_MODE= 0x3 (RX after
+	//		a packet has been sent)
+*/
 0x38 ,	// MSCM0	FS_AUTOCAL= 0x3, PO_TIMEOUT= 0x2, PIN_CTRL_EN= 0,
 	//		XOS_FORCE_ON= 0
 0x16 ,	// FOCCFG	FOC_BS_CS_GATE= 0, FOC_PRE_K= 0x2, FOC_POST_K= 1,
@@ -161,47 +168,16 @@ PROGMEM prog_uint8_t CC1100_CFG[CC1100_CONFIG_SIZE_W] = {
 */
 
 //--------------------------------------------------------------------
-uint8_t
-cc1100_sendbyte(uint8_t data)
-{
-  SPDR = data;		        // send byte
-  while (!(SPSR & _BV (SPIF)));	// wait until transfer finished
-  return SPDR;
-}
-
-//--------------------------------------------------------------------
-uint8_t
-cc1100_read(uint8_t data)
-{
-  CC1100_ASSERT;
-
-  cc1100_sendbyte(data);
-  uint8_t temp = cc1100_sendbyte(0);
-
-  CC1100_DEASSERT;
-
-  return temp;
-}
-
-//--------------------------------------------------------------------
-void
-ccStrobe(uint8_t strobe)
-{
-  CC1100_ASSERT;
-  cc1100_sendbyte(strobe);
-  CC1100_DEASSERT;
-}
-//--------------------------------------------------------------------
 
 // see CC1101 documentation, chapter 29, p. 82
 void ccSetConfig(void) {
 
-  CC1100_ASSERT;                             // upload configuration
-  cc1100_sendbyte(0 | CC1100_WRITE_BURST);
-  for(uint8_t i= 0; i< CC1100_CONFIG_SIZE_W; i++) {
-    cc1100_sendbyte(__LPM(CC1100_CFG+i));
-  }
-  CC1100_DEASSERT;
+	CC1100_SPI_BEGIN;                             // upload configuration
+  	ccSpiSend(0 | CC1100_WRITE_BURST);
+  	for(uint8_t i= 0; i< CC1100_CONFIG_SIZE_W; i++) {
+    		ccSpiSend(__LPM(CC1100_CFG+i));
+  	}
+  	CC1100_SPI_END;
 
 }
 
@@ -209,50 +185,56 @@ void ccSetConfig(void) {
 
 void ccGetConfig(uint8_t* data) {
 
-  CC1100_ASSERT;
-  cc1100_sendbyte(0 | CC1100_READ_BURST);
-  for(uint8_t i= 0; i< CC1100_CONFIG_SIZE_R; i++) {
-    data[i]= cc1100_sendbyte(0);
-  }
-  CC1100_DEASSERT;
+	ccSpiRead(0 | CC1100_READ_BURST, data, CC1100_CONFIG_SIZE_R);
+
 }
 
 //--------------------------------------------------------------------
 
-uint8_t cc1100_readReg(uint8_t addr) {
-     return cc1100_read(addr | CC1100_READ_STATUS);
+uint8_t ccReadReg(uint8_t addr) {
+
+	uint8_t data;
+
+	CC1100_SPI_BEGIN;
+    	ccSpiSend(addr | CC1100_READ_STATUS);
+    	data= ccSpiSend(0);
+	CC1100_SPI_END;
+	return(data);
+
 }
 
 //--------------------------------------------------------------------
 
-void ccGetStatus(uint8_t* data) {
+void ccGetStatusRegisters(uint8_t* data) {
 
-  CC1100_ASSERT;
-  for(uint8_t i= 0; i< CC1100_STATUS_SIZE_R; i++) {
-    cc1100_sendbyte((CC1100_PARTNUM+i) | CC1100_READ_STATUS);
-    data[i]= cc1100_sendbyte(0);
-  }
-  CC1100_DEASSERT;
+  	CC1100_SPI_BEGIN;
+  	for(uint8_t i= 0; i< CC1100_STATUS_SIZE_R; i++) {
+    		ccSpiSend((CC1100_PARTNUM+i) | CC1100_READ_STATUS);
+    		data[i]= ccSpiSend(0);
+  	}
+  	CC1100_SPI_END;
+
 }
 
 //--------------------------------------------------------------------
+
 void ccResetChip(void)
 {
 
 	//
 	// reset
 	//
-  	CC1100_DEASSERT;	// Toggle chip select signal
+  	CC1100_SPI_CS_DEASSERT;	// Toggle chip select signal
   	_delay_us(30);
-  	CC1100_ASSERT;
+  	CC1100_SPI_CS_ASSERT;
   	_delay_us(30);
-  	CC1100_DEASSERT;
+  	CC1100_SPI_CS_DEASSERT;
   	_delay_us(45);
 
-  	ccStrobe(CC1100_SRES);	// Send SRES command
+  	ccSpiStrobe(CC1100_SRES);	// Send SRES command
   	_delay_us(100);
 
-	CC1100_DEASSERT;
+	CC1100_SPI_CS_DEASSERT;
 }
 
 
@@ -261,37 +243,172 @@ void ccInitChip(void)
 {
 
 	SET_BIT(CC1100_CS_DDR, CC1100_CS_PIN);     // CS as output
-	CC1100_DEASSERT;
+	CC1100_SPI_CS_DEASSERT;
 
 	ccResetChip();
 
 	ccSetConfig();                  // load configuration
 
-	ccStrobe(CC1100_SCAL);
+	ccSpiStrobe(CC1100_SCAL);
   	_delay_ms(1);
+
 }
 
 //--------------------------------------------------------------------
-void
-ccTX(void)
-{
-  uint8_t cnt = 0xff;
-  EIMSK  &= ~_BV(CC1100_INT);
 
-  while (cnt-- && (cc1100_readReg(CC1100_MARCSTATE) & 0x1f) != 19) {
-    ccStrobe(CC1100_STX);
-  }
+uint8_t ccGetStatus(uint8_t strobe) {
+
+	uint8_t status1;
+	uint8_t status2;
+
+	status1= ccSpiStrobe(strobe);
+	status2= ccSpiStrobe(strobe);
+	while(status1 != status2) {
+		status1= status2;
+		status2= ccSpiStrobe(strobe);
+	}
+	return status2;
 }
 
 //--------------------------------------------------------------------
-void
-ccRX(void)
-{
-  uint8_t cnt = 0xff;
-  while (cnt-- && (cc1100_readReg(CC1100_MARCSTATE) & 0x1f) != 13)
-       ccStrobe(CC1100_SRX);
-  EIFR  |= _BV(CC1100_INT);
-  EIMSK |= _BV(CC1100_INT);
+
+uint8_t ccGetRxStatus(void) {
+
+//
+// Status byte:
+//
+// ----------------------------------------------------------------------------
+// |          |            |                                                  |
+// | CHIP_RDY | STATE[2:0] | FIFO_BYTES_AVAILABLE (available bytes in RX FIFO |
+// |          |            |                                                  |
+// ----------------------------------------------------------------------------
+//
+	return ccGetStatus(CC1100_SNOP | CC1100_READ_SINGLE);
 }
 
 
+//--------------------------------------------------------------------
+
+uint8_t ccGetTxStatus(void) {
+
+//
+// Status byte:
+//
+// ---------------------------------------------------------------------------
+// |          |            |                                                 |
+// | CHIP_RDY | STATE[2:0] | FIFO_BYTES_AVAILABLE (free bytes in the TX FIFO |
+// |          |            |                                                 |
+// ---------------------------------------------------------------------------
+
+	return(ccGetStatus(CC1100_SNOP));
+}
+
+//--------------------------------------------------------------------
+
+uint8_t ccWriteFifo(uint8_t *data, uint8_t length)
+{
+    return(ccSpiWrite(CC1100_TXFIFO | CC1100_WRITE_BURST, data, length));
+}
+
+//----------------------------------------------------------------------------------
+
+uint8_t ccReadFifo(uint8_t *data, uint8_t length)
+{
+    return(ccSpiRead(CC1100_RXFIFO | CC1100_READ_BURST, data, length));
+}
+
+//--------------------------------------------------------------------
+
+void ccTxPacket(uint8_t *data, uint8_t count) {
+
+	uint8_t status;		// TX status
+	uint8_t nsent= 0;	// bytes sent
+	uint8_t n;
+
+	while(1) {
+
+		status= ccGetTxStatus();
+
+		switch(status & CC1100_STATUS_STATE_BM) {
+			case CC1100_STATE_IDLE:
+				// all sent?
+				if(nsent==count) {
+					return;
+				} else {
+					// TX command strobe
+					ccSpiStrobe(CC1100_STX);
+					// fall through (no break)
+				}
+			case CC1100_STATE_CALIBRATE:
+			case CC1100_STATE_TX:
+				n= status & CC1100_STATUS_FIFO_BYTES_AVAILABLE_BM;
+				// in variable length packet mode, first byte is packet length
+				if(!nsent) { ccWriteFifo(&count, 1); n--; }
+				// send at most remaining number of bytes
+				if(n>count-nsent) { n= count-nsent; }
+				if(n) {
+					ccWriteFifo(&data[nsent], n);
+					nsent+= n;
+				}
+				break;
+			case CC1100_STATE_TX_UNDERFLOW:
+				ccSpiStrobe(CC1100_SFTX); // clear underflow
+				break;
+			default:
+				nsent= count;
+				break;
+		}
+	}
+}
+
+//--------------------------------------------------------------------
+
+uint8_t ccRxPacket(uint8_t *data) {
+
+	uint8_t count= 0;	// length byte
+	uint8_t status;		// RX status
+	uint8_t nrcvd= 0;	// bytes received
+	uint8_t n;
+
+	while(1) {
+
+		status= ccGetRxStatus();
+
+		switch(status & CC1100_STATUS_STATE_BM) {
+			case CC1100_STATE_IDLE:
+			case CC1100_STATE_RX:
+				// If there's anything in the RX FIFO....
+				if((n= (status & CC1100_STATUS_FIFO_BYTES_AVAILABLE_BM))) {
+					if(!count) {
+		                	    // Make sure that the RX FIFO is not emptied
+	                		    // (see the CC1100 or 2500 Errata Note)
+        	        		    if(n>1) {
+                			    	count= ccReadReg(CC1100_RXFIFO);
+                			    	n--;
+                			    } else {
+	                		    	break;
+        	        		    }
+                			}
+	   			        // Make sure that the RX FIFO is not emptied
+        	        		// (see the CC1100 or 2500 Errata Note)
+	                		if((n>1) && (n!= count-nrcvd)) {
+        	        			// Leave one byte in FIFO
+						n--;
+	                		} else if((n<=1) && (n!= count-nrcvd)) {
+		                	    	// Need more data in FIFO before reading additional bytes
+                	    			break;
+		                	}
+			                // Read from RX FIFO and store the data in rxBuffer
+                			ccReadFifo(&(data[nrcvd]), n);
+                			nrcvd+= n;
+					// Done?
+					if(!count && (nrcvd==count)) return count;
+					break;
+                		} else if(!count) return 0; // nothing to receive
+			case CC1100_STATE_RX_OVERFLOW:
+				ccSpiStrobe(CC1100_SFRX); // clear overflow
+				return 0;
+		}
+	}
+
+}

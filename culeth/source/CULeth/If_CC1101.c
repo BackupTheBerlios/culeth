@@ -12,7 +12,7 @@ uint16_t FrameCount_If_CC1101_OUT= 0;
 
 void CC1101_Init(void) {
 
-	spi_init();
+	ccSpiInit();
      	ccInitChip();
 }
 
@@ -20,7 +20,18 @@ void CC1101_Init(void) {
 
 bool CC1101_RX(void)
 {
+     	uint8_t* UDPMessage=	get_UDP_Payload(Frame.FrameData);
+     	uint8_t size= 0;
 
+	size= ccRxPacket(UDPMessage);
+	if(size) {
+		Frame.FrameLength= finalize_UDP_Packet(Frame.FrameData, size);
+    		FrameCount_If_CC1101_IN++;
+    	}
+    	return size;
+
+
+/*
      	uint8_t* UDPMessage=	get_UDP_Payload(Frame.FrameData);
      	uint8_t size= 0;
 
@@ -64,14 +75,20 @@ bool CC1101_RX(void)
 
 		return size;
 	;
-     	}
+     	}*/
 
      	return false;
 }
 
 bool CC1101_TX(void)
 {
-	ccStrobe( CC1100_SIDLE );
+	ccTxPacket(Frame.FrameData, Frame.FrameLength);
+
+	FrameCount_If_CC1101_OUT++;
+
+	return true;
+
+	/*ccStrobe( CC1100_SIDLE );
 	ccStrobe( CC1100_SFRX  );
 	ccStrobe( CC1100_SFTX  );
 
@@ -93,12 +110,12 @@ bool CC1101_TX(void)
 
 	FrameCount_If_CC1101_OUT++;
 
-	return true;
+	return true;*/
 }
 
 bool CC1101_TX_test(void)
 {
-
+/*
 	ccStrobe( CC1100_SIDLE );
 	ccStrobe( CC1100_SFRX  );
 	ccStrobe( CC1100_SFTX  );
@@ -117,7 +134,8 @@ bool CC1101_TX_test(void)
 
 	ccStrobe( CC1100_SIDLE );
 	ccStrobe( CC1100_SFRX  );
-	ccStrobe( CC1100_STX   );
+	ccStrobe( CC1100_STX   );*/
+	ccTxPacket(Frame.FrameData, CC1101_TESTPACKETSIZE);
 
 	FrameCount_If_CC1101_OUT++;
 

@@ -5,16 +5,10 @@
 #include <avr/io.h>
 
 void ccInitChip(void);
-void ccTX(void);
-void ccRX(void);
-void ccStrobe(uint8_t);
-
-uint8_t cc1100_readReg(uint8_t addr);
 void ccGetConfig(uint8_t* data);
-void ccGetStatus(uint8_t* data);
-
-uint8_t cc1100_sendbyte(uint8_t data);
-uint8_t cc1100_read(uint8_t data);
+void ccGetStatusRegisters(uint8_t* data);
+void ccTxPacket(uint8_t *data, uint8_t count);
+uint8_t ccRxPacket(uint8_t *data);
 
 
 // Configuration Registers
@@ -150,15 +144,6 @@ uint8_t cc1100_read(uint8_t data);
 #define CC1100_LQI_CRC_OK_BM                   0x80
 #define CC1100_LQI_EST_BM                      0x7F
 
-
-//------------------------------------------------------------------------------
-// see CC1101 documentation, chapter 10, p. 28
-//------------------------------------------------------------------------------
-
-#include "board.h"
-
-#define CC1100_DEASSERT  SET_BIT( CC1100_CS_PORT, CC1100_CS_PIN )
-#define CC1100_ASSERT    CLEAR_BIT( CC1100_CS_PORT, CC1100_CS_PIN )
 
 
 /******************************************************************************/

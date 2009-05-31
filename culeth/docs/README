@@ -16,18 +16,20 @@ frames between a PC and CC11xx transceiver based devices such as Betty with Boop
 firmware (see http://www.bettyhacks.com).
 
 On USB, CUL appears on the host as an ethernet adapter with a proper IP address.
-The IP address is 10.0.0.xxx. This is the host's IP address.
+The IP address is 192.168.108.1. This is the host's IP address.
 
-Packages from the host with a destination in the subnet 10.0.0.0/255.0.0.0 pass
-through that interface and are transmitted to air. Packages from the air are
-send via the CUL interface to the host. CUL is completely agnostic of the higher
+Packages from the host with a destination in the subnet 192.168.108.0/255.0.0.0
+pass through that interface and are transmitted to air. Packages from the air are
+sent via the CUL interface to the host. CUL is completely agnostic of the higher
 level protocols used in the ethernet frames it passes from Betty to host hither
 and yon.
 
-As a gimmick, CULeth simulates a simple host with the following features:
+CULeth simulates a simple host (CULServer) with the following features:
 - answer ARP requests
 - support ICMP ping echos
 - reply to UDP requests on port 7073
+
+A command set for testing CULeth is implemented in the CULServer.
 
 
 +-----------+             +--------------------+      +----------------+
@@ -42,6 +44,11 @@ As a gimmick, CULeth simulates a simple host with the following features:
                                 |192.168.108.127|
                                 |               |
                                 +---------------+
+
+
+***** IMPORTANT NOTICE: the current version of CULeth wraps packages received
+on air into UDP packets and sends them to port 7073 on host 192.168.108.1. They
+packets can be monitored by means of the tools/server.pl (see below).
 
 
 CULeth is a derivative of the RNDISEthernet demo from LUFA (see
@@ -100,7 +107,15 @@ tcpdump -e -i usb0 -n -U -v -s 200 -X
 CULserver communication
 -----------------------
 
-Use tools/udp.pl to talk to the CULserver.
+Use tools/udp.pl to talk to the CULserver. The user interface is self-explanatory.
+
+Use tools/server.pl to listen to incoming requests from the CULserver on the
+host.
+
+The (8) test feature sends a test message to the host (4 bytes time stamp first).
+Every packet that runs through the hub sends a notice to the host (4 bytes time
+stamp followed by the number of the source and destination interfaces, see
+Interfaces.h).
 
 
 
@@ -130,14 +145,23 @@ X09
 CULeth internals
 ================
 
-The main function is in CULeth.c
+The main function is in CULeth.c. The hub function is Ethernet_Task. It receives
+a packet from an interface and forwards it on air, to the CULServer or both
+(broadcasts).
 
+Due to the small memory (512 bytes of RAM), the packet length (MTU) is quite
+limited. Packets cannot be stored. Only one packet at a time, either incoming or
+outgoing, can be handled.
 
+If a message passing through the hub triggers an extra packet to be sent out,
+then this is done in extras.c.
 
 
 RNDIS.h		ADAPTER_MAC_ADDRESS	HWaddr 02:00:02:00:02:00 (reverse notation!)
 Ethernet.h	SERVER_MAC_ADDRESS	HWAddr 01:00:01:00:01:00 (reverse notation!)
 IP.h		SERVER_IP_ADDRESS	192.168.108.127
+
+
 
 
 

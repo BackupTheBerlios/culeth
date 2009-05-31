@@ -68,7 +68,7 @@ int16_t CULServer_ProcessPacket(void* IPHeaderInStart, void* CULServerRequestSta
 			break;
 		case CULSERVER_OP_GETCC1101STATUS:
 			Reply->Length= CC1100_STATUS_SIZE_R;
-			ccGetStatus(Reply->Result);
+			ccGetStatusRegisters(Reply->Result);
 			break;
 		case CULSERVER_OP_GETCC1101CONFIG:
 			Reply->Length= CC1100_CONFIG_SIZE_R;

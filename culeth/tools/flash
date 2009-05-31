@@ -9,7 +9,7 @@
 #
 PROGRAMMER=dfu-programmer
 MCU=at90usb162
-IMAGE=CULeth.hex
+IMAGE=../source/CULeth.hex
 
 # ---------
 if [ ! -f $IMAGE ]; then
