@@ -15,19 +15,22 @@
 	/* Macros: */
 
 		/** CULServer operation constants, indicating a request from a host */
-		#define CULSERVER_OP_SETDFLTCFG '0'
+		#define CULSERVER_OP_GETSTAT    's'
+		#define CULSERVER_OP_GETCC1101STATUS 'u'
+		#define CULSERVER_OP_GETCC1101CONFIG 'c'
 		#define CULSERVER_OP_GETVERSION 'v'
 		#define CULSERVER_OP_GETTIME    't'
-		#define CULSERVER_OP_GETIP      'i'
-		#define CULSERVER_OP_SETIP      'I'
-		#define CULSERVER_OP_GETSTAT    's'
-		#define CULSERVER_OP_GETCC1101CONFIG 'c'
-		#define CULSERVER_OP_GETCC1101STATUS 'u'
-		#define CULSERVER_OP_CC1101SEND 'p'
 		#define CULSERVER_OP_BLINK      'b'
-		#define CULSERVER_OP_TEST       '?'
+		#define CULSERVER_OP_TESTPACKETONAIR       'a'
+		#define CULSERVER_OP_TESTPACKETTOTARGET       'p'
 		#define CULSERVER_OP_BOOTLOADER '>'
 		#define CULSERVER_OP_EEPROM     'e'
+		#define CULSERVER_OP_EEPROMRESET     'E'
+		#define CULSERVER_OP_REBOOT '0'
+		#define CULSERVER_OP_SETADAPTERMAC	'A'
+		#define CULSERVER_OP_SETSERVERMAC	'M'
+		#define CULSERVER_OP_SETSERVERIPPORT	'I'
+		#define CULSERVER_OP_SETTARGETIPPORT	'T'
 
 		#define ACK			6
 		#define NAK			21

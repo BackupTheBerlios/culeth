@@ -5,10 +5,10 @@
  *  reliability packets which are typically used to encapsulate streaming data.
  */
 
-#define  INCLUDE_FROM_UDP_C
 #include "UDP.h"
 #include "CULServer.h"
-#include "RNDIS.h" // -> ADAPTER_MAC_ADDRESS
+//#include "RNDIS.h" // -> ADAPTER_MAC_ADDRESS
+#include "config.h"
 
 /** Processes a UDP packet inside an Ethernet frame, and writes the appropriate response
  *  to the output Ethernet frame if a subprotocol handler has created a response packet.
@@ -32,7 +32,7 @@ int16_t UDP_ProcessUDPPacket(void* IPHeaderInStart, void* UDPHeaderInStart, void
 		RetSize = NO_RESPONSE;
 	}
 
-	if (SwapEndian_16(UDPHeaderIN->DestinationPort) == 7073)
+	if (SwapEndian_16(UDPHeaderIN->DestinationPort) == get_config_word(CFG_OFS_SPORT))
 	{
                 RetSize = CULServer_ProcessPacket(IPHeaderInStart,
                              &((uint8_t*)UDPHeaderInStart)[sizeof(UDP_Header_t)],
@@ -59,9 +59,7 @@ int16_t UDP_ProcessUDPPacket(void* IPHeaderInStart, void* UDPHeaderInStart, void
 }
 
 
-
-const IP_Address_t  TargetIPAddress     = {TARGET_IP_ADDRESS};
-
+//const IP_Address_t  TargetIPAddress     = {TARGET_IP_ADDRESS};
 
 
 uint8_t* get_UDP_Payload(uint8_t* Data) {
@@ -74,7 +72,7 @@ uint16_t finalize_UDP_Packet(uint8_t* Data, uint8_t payloadsize) {
 
 	UDP_Packet_t*	UDPPacket= (UDP_Packet_t*) Data;
 
-	const MAC_Address_t  AdapterMACAddress     = {ADAPTER_MAC_ADDRESS};
+	//const MAC_Address_t  AdapterMACAddress     = {ADAPTER_MAC_ADDRESS};
 
 	// sanity check
 	if(payloadsize> MAX_PAYLOAD_SIZE) {
@@ -82,8 +80,10 @@ uint16_t finalize_UDP_Packet(uint8_t* Data, uint8_t payloadsize) {
 	}
 
 	// build Ethernet Frame
-	memcpy(&UDPPacket->FrameHeader.Source, &ServerMACAddress, sizeof(MAC_Address_t));
-	memcpy(&UDPPacket->FrameHeader.Destination, &AdapterMACAddress, sizeof(MAC_Address_t));
+	get_CULServer_MAC(&UDPPacket->FrameHeader.Source);
+	//memcpy(&UDPPacket->FrameHeader.Source, &ServerMACAddress, sizeof(MAC_Address_t));
+	get_Adapter_MAC(&UDPPacket->FrameHeader.Destination);
+	//memcpy(&UDPPacket->FrameHeader.Destination, &AdapterMACAddress, sizeof(MAC_Address_t));
 	UDPPacket->FrameHeader.EtherType= SwapEndian_16(ETHERTYPE_IPV4);
 
 	// build IP Header
@@ -97,13 +97,14 @@ uint16_t finalize_UDP_Packet(uint8_t* Data, uint8_t payloadsize) {
 	UDPPacket->IPHeader.HeaderChecksum     = 0;
 	UDPPacket->IPHeader.Protocol           = PROTOCOL_UDP;
 	UDPPacket->IPHeader.TTL                = DEFAULT_TTL;
-	UDPPacket->IPHeader.SourceAddress      = ServerIPAddress;
-	UDPPacket->IPHeader.DestinationAddress = TargetIPAddress;
+	get_CULServer_IP(&UDPPacket->IPHeader.SourceAddress);
+	get_Target_IP(&UDPPacket->IPHeader.DestinationAddress);
 	UDPPacket->IPHeader.HeaderChecksum     = Ethernet_Checksum16(&UDPPacket->IPHeader, sizeof(IP_Header_t));
 
 	// build UDP header
 	UDPPacket->UDPHeader.SourcePort= 0;
-	UDPPacket->UDPHeader.DestinationPort= SwapEndian_16(7073);
+	UDPPacket->UDPHeader.DestinationPort= SwapEndian_16(get_config_word(CFG_OFS_TPORT));
+	//UDPPacket->UDPHeader.DestinationPort= SwapEndian_16(7073);
 	UDPPacket->UDPHeader.Length= SwapEndian_16(8+payloadsize);
 	UDPPacket->UDPHeader.Checksum= 0; // no checksum
 

@@ -44,10 +44,10 @@ Ethernet_Frame_Info_t Frame;
 
 
 /** Constant for convenience when checking against or setting a MAC address to the virtual server MAC address. */
-const MAC_Address_t ServerMACAddress    = {SERVER_MAC_ADDRESS};
+//const MAC_Address_t ServerMACAddress    = {SERVER_MAC_ADDRESS};
 
 /** Constant for convenience when checking against or setting an IP address to the virtual server IP address. */
-const IP_Address_t  ServerIPAddress     = {SERVER_IP_ADDRESS};
+//const IP_Address_t  ServerIPAddress     = {SERVER_IP_ADDRESS};
 
 /** Constant for convenience when checking against or setting a MAC address to the broadcast MAC address. */
 const MAC_Address_t BroadcastMACAddress = {BROADCAST_MAC_ADDRESS};
@@ -63,6 +63,9 @@ const IP_Address_t  BroadcastIPAddress  = {BROADCAST_IP_ADDRESS};
 bool isServerMACAddress(void) {
 
 	Ethernet_Frame_Header_t* FrameHeader  = (Ethernet_Frame_Header_t*)&Frame.FrameData;
+
+	MAC_Address_t ServerMACAddress;
+	get_CULServer_MAC(&ServerMACAddress);
 	/* Ensure frame is addressed to either all (broadcast) or the virtual server, and is a type II frame */
 	return MAC_COMPARE(&FrameHeader->Destination, &ServerMACAddress);
 
@@ -106,7 +109,7 @@ bool Ethernet_ProcessPacket(void)
 		{
 			/* Fill out the response Ethernet frame header */
 			FrameHeader->Destination     = FrameHeader->Source;
-			FrameHeader->Source          = ServerMACAddress;
+			get_CULServer_MAC(&FrameHeader->Source);
 
 			/* Set the response length in the buffer and indicate that a response is ready to be sent */
 			Frame.FrameLength            = (sizeof(Ethernet_Frame_Header_t) + RetSize);

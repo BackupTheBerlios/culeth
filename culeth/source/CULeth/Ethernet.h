@@ -42,7 +42,7 @@
                 #include <stdbool.h>
                 #include <LUFA/Common/Common.h>
 
-		#include "EthernetProtocols.h"
+		#include "MAC.h"
 		#include "IP.h"
 		#include "Interfaces.h"
 
@@ -102,11 +102,8 @@
 		extern Ethernet_Frame_Info_t Frame;
 		extern uint16_t	FrameCount;
 
-		extern const MAC_Address_t ServerMACAddress;
-		extern const IP_Address_t  ServerIPAddress;
-		extern const MAC_Address_t BroadcastMACAddress;
-		extern const IP_Address_t  BroadcastIPAddress;
-		extern const IP_Address_t  ClientIPAddress;
+//		extern const MAC_Address_t BroadcastMACAddress;
+//		extern const IP_Address_t  BroadcastIPAddress;
 
 	/* Function Prototypes: */
 		bool 	 isServerMACAddress(void);

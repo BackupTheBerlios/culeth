@@ -17,6 +17,7 @@ void CC1101_Init(void) {
 }
 
 
+//uint16_t loop= 0;
 
 bool CC1101_RX(void)
 {
@@ -24,10 +25,23 @@ bool CC1101_RX(void)
      	uint8_t size= 0;
 
 	size= ccRxPacket(UDPMessage);
-	if(size) {
+
+	/*
+    	loop++;
+    	if(!loop) {
+    		size= 32;
+    		UDPMessage[0]= 0xaf;
+    		UDPMessage[1]= 0xfe;
+    		UDPMessage[2]= loop && 0xff;
+    		UDPMessage[3]= loop >> 8;
+    		memcpy(&UDPMessage[4], &size, size-4);
+    	}*/
+
+    	if(size) {
 		Frame.FrameLength= finalize_UDP_Packet(Frame.FrameData, size);
     		FrameCount_If_CC1101_IN++;
     	}
+
     	return size;
 
 

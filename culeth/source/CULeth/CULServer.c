@@ -7,6 +7,7 @@
 #include <util/crc16.h>
 #include "CULServer.h"
 #include "cc1100.h"
+#include "MAC.h"
 #include "Ethernet.h"
 #include "IP.h"
 #include "UDP.h"
@@ -32,7 +33,6 @@ int16_t CULServer_ProcessPacket(void* IPHeaderInStart, void* CULServerRequestSta
 
 	Reply->ExitCode= ACK;
 	Reply->Length= 0;
-	memset(Reply->Result, 0, MAXLEN);
 	switch(Request->Operation) {
 		case CULSERVER_OP_GETVERSION:
 			Reply->Length= 2;
@@ -44,20 +44,15 @@ int16_t CULServer_ProcessPacket(void* IPHeaderInStart, void* CULServerRequestSta
 			Reply->Length= sizeof(elapsed_seconds);
 			memcpy(Reply->Result, &elapsed_seconds, Reply->Length);
 			break;
-		case CULSERVER_OP_TEST:
+		case CULSERVER_OP_TESTPACKETTOTARGET:
 			Reply->Length= 0;
 			extraflag= EXTRA_TEST;
 			extraarg = 0xff;
 			break;
-		case CULSERVER_OP_SETDFLTCFG:
-			Reply->Length= 0;
-			factory_reset();
-			break;
-		case CULSERVER_OP_GETIP:
-			Reply->Length= 4;
-			for(uint8_t i= 0; i<= 3; i++) {
-				Reply->Result[i]= ServerIPAddress.Octets[i];
-			}
+		case CULSERVER_OP_TESTPACKETONAIR:
+			Reply->Length= 1;
+			Reply->Result[ 0]= CC1101_TESTPACKETSIZE;
+			CC1101_TX_test();
 			break;
 		case CULSERVER_OP_GETSTAT:
 			Reply->Length= 4;
@@ -74,11 +69,6 @@ int16_t CULServer_ProcessPacket(void* IPHeaderInStart, void* CULServerRequestSta
 			Reply->Length= CC1100_CONFIG_SIZE_R;
 			ccGetConfig(Reply->Result);
 			break;
-		case CULSERVER_OP_CC1101SEND:
-			Reply->Length= 1;
-			Reply->Result[ 0]= CC1101_TESTPACKETSIZE;
-			CC1101_TX_test();
-			break;
 		case CULSERVER_OP_BLINK:
 			Reply->Length= 1;
 			Reply->Result[ 0]= 5;
@@ -89,14 +79,51 @@ int16_t CULServer_ProcessPacket(void* IPHeaderInStart, void* CULServerRequestSta
 				for(int j= 0; j< 25; j++) { _delay_ms(10); }
 			}
 			break;
+		case CULSERVER_OP_REBOOT:
+			Reply->Length= 1;
+			Reply->Result[0]= CFG_NOREQBL;
+			extraflag= EXTRA_REBOOT;
+			break;
 		case CULSERVER_OP_BOOTLOADER:
-			Reply->Length= 0;
-			extraflag= EXTRA_BOOT;
+			Reply->Length= 1;
+			Reply->Result[0]= CFG_REQBL;
+			extraflag= EXTRA_BOOTLOADER;
 			break;
 		case CULSERVER_OP_EEPROM:
-			Reply->Length= 5;
-			for(int i= 0; i< 5; i++)
-				Reply->Result[i]= get_config(CFG_OFS_REQBL+i);
+			Reply->Length= CFG_LENGTH;
+			for(int i= 0; i< Reply->Length; i++)
+				Reply->Result[i]= get_config_byte(CFG_START+i);
+			break;
+		case CULSERVER_OP_EEPROMRESET:
+			Reply->Length= 0;
+			factory_reset();
+			extraflag= EXTRA_REBOOT;
+			break;
+		case CULSERVER_OP_SETTARGETIPPORT:
+			set_Target_IP((IP_Address_t*)Request->Operand);
+			set_config_byte(CFG_OFS_TPORT  , Request->Operand[4]);
+			set_config_byte(CFG_OFS_TPORT+1, Request->Operand[5]);
+			Reply->Length= sizeof(IP_Address_t);
+			get_Target_IP((IP_Address_t*)Reply->Result);
+			break;
+		case CULSERVER_OP_SETSERVERIPPORT:
+			set_CULServer_IP((IP_Address_t*)Request->Operand);
+			set_config_byte(CFG_OFS_SPORT  , Request->Operand[4]);
+			set_config_byte(CFG_OFS_SPORT+1, Request->Operand[5]);
+			Reply->Length= sizeof(IP_Address_t);
+			get_CULServer_IP((IP_Address_t*)Reply->Result);
+			break;
+		case CULSERVER_OP_SETSERVERMAC:
+			set_CULServer_MAC((MAC_Address_t*)Request->Operand);
+			Reply->Length= sizeof(MAC_Address_t);
+			get_CULServer_MAC((MAC_Address_t*)Reply->Result);
+			extraflag= EXTRA_REBOOT;
+			break;
+		case CULSERVER_OP_SETADAPTERMAC:
+			set_Adapter_MAC((MAC_Address_t*)Request->Operand);
+			Reply->Length= sizeof(MAC_Address_t);
+			get_Adapter_MAC((MAC_Address_t*)Reply->Result);
+			extraflag= EXTRA_REBOOT;
 			break;
 		default:
 			Reply->ExitCode= NAK;
@@ -104,7 +131,7 @@ int16_t CULServer_ProcessPacket(void* IPHeaderInStart, void* CULServerRequestSta
 
 	/* Alter the incoming IP packet header so that the corrected IP source and destinations are used - this means that
 	   when the response IP header is generated, it will use the corrected addresses and not the null/broadcast addresses */
-	IPHeaderIN->DestinationAddress = ServerIPAddress;
+	get_CULServer_IP(&IPHeaderIN->DestinationAddress);
 
 	return 4+Reply->Length; //sizeof(CULServer_Reply_t);
 }

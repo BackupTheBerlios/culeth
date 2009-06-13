@@ -44,7 +44,6 @@
 
 		#include "EthernetProtocols.h"
 		#include "Ethernet.h"
-		//#include "ProtocolDecoders.h"
 
 	/* Macros: */
 		/** ARP header operation constant, indicating a request from a host for an address translation */

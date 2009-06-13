@@ -9,10 +9,21 @@
 #include <avr/interrupt.h>
 
 
-void prepare_boot(void) {
+void reboot(void) {
 
 	// no need for USB_ShutDown();
-  	set_config(CFG_OFS_REQBL, CFG_REQBL);
+	set_config_byte(CFG_OFS_REQBL, CFG_NOREQBL);
+
+	timer_Done();
+
+  	// infinite loop, the watchdog will take us to reset
+  	while (1);
+}
+
+void prepare_bootloader(uint8_t bootloader) {
+
+	// no need for USB_ShutDown();
+	set_config_byte(CFG_OFS_REQBL, CFG_REQBL);
 
 	timer_Done();
 
@@ -41,8 +52,10 @@ bool watchdog_caused_reset(void) {
 
 void check_bootloader_request(void)
 {
-	if(watchdog_caused_reset() && get_config(CFG_OFS_REQBL)==CFG_REQBL) {
-		set_config(CFG_OFS_REQBL, CFG_NOREQBL);
+	if(watchdog_caused_reset() && get_config_byte(CFG_OFS_REQBL)==CFG_REQBL) {
+		//set_config_byte(CFG_OFS_REQBL, CFG_NOREQBL); // do not clear flag
+		// because we want a factory reset to be done in the main()
+		// function
 		start_bootloader();
   	}
 }

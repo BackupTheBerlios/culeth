@@ -54,8 +54,11 @@ TASK(Extras_Task)
 		case EXTRA_PACKET:
 			send_packet();
 			break;
-		case EXTRA_BOOT:
-			prepare_boot();
+		case EXTRA_REBOOT:
+			reboot();
+			break;
+		case EXTRA_BOOTLOADER:
+			prepare_bootloader();
 			break;
 		default:
 			{

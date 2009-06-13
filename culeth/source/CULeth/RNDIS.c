@@ -36,10 +36,11 @@
 
 #define  INCLUDE_FROM_RNDIS_C
 #include "RNDIS.h"
+#include "MAC.h"
 
 /* Global Variables: */
 /** Physical MAC address of the network adapter, which becomes the MAC address of the host for packets sent to the adapter. */
-static MAC_Address_t   PROGMEM 	AdapterMACAddress          = {ADAPTER_MAC_ADDRESS};
+//static MAC_Address_t   PROGMEM 	AdapterMACAddress          = {ADAPTER_MAC_ADDRESS};
 
 /** Vendor description of the adapter. This is overridden by the INF file required to install the appropriate RNDIS drivers for
  *  the device, but may still be used by the OS in some circumstances.
@@ -310,7 +311,8 @@ static bool ProcessNDISQuery(uint32_t OId, void* QueryData, uint16_t QuerySize,
 			*ResponseSize = sizeof(MAC_Address_t);
 
 			/* Copy over the fixed adapter MAC to the response buffer */
-			memcpy_P(ResponseData, &AdapterMACAddress, sizeof(MAC_Address_t));
+			get_Adapter_MAC(ResponseData);
+			//memcpy_P(ResponseData, &AdapterMACAddress, sizeof(MAC_Address_t));
 
 			return true;
 		case OID_802_3_MAXIMUM_LIST_SIZE:

@@ -71,6 +71,9 @@ int main(void)
 	/* start bootloader if requested */
 	check_bootloader_request();
 
+	/* if bootloader was requested do a factory reset */
+	if(get_config_byte(CFG_OFS_REQBL)) factory_reset();
+
 	/* Disable watchdog if enabled by bootloader/fuses */
 	disable_watchdog(); // bootloader does not work if this comes earlier
 

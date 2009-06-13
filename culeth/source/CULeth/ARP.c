@@ -36,6 +36,8 @@
  */
 
 #include "ARP.h"
+#include "MAC.h"
+#include "IP.h"
 
 /** Processes an ARP packet inside an Ethernet frame, and writes the appropriate response
  *  to the output Ethernet frame if the host is requesting the IP or MAC address of the
@@ -55,6 +57,11 @@ int16_t ARP_ProcessARPPacket(void* InDataStart, void* OutDataStart)
 	if ((SwapEndian_16(ARPHeaderIN->ProtocolType) == ETHERTYPE_IPV4) &&
 	    (SwapEndian_16(ARPHeaderIN->Operation) == ARP_OPERATION_REQUEST))
 	{
+
+		IP_Address_t ServerIPAddress;
+		get_CULServer_IP(&ServerIPAddress);
+		MAC_Address_t ServerMACAddress;
+		get_CULServer_MAC(&ServerMACAddress);
 		/* If the ARP packet is requesting the MAC or IP of the virtual server, return the response */
 		if (IP_COMPARE(&ARPHeaderIN->TPA, &ServerIPAddress) ||
 		    MAC_COMPARE(&ARPHeaderIN->THA, &ServerMACAddress))

@@ -51,10 +51,6 @@
 
 
 /** Constant for convenience when checking against or setting an IP address to the virtual server IP address. */
-#define TARGET_IP_ADDRESS                { 192, 168, 108, 1}
-extern const IP_Address_t  TargetIPAddress;
-#define TARGET_PORT	7073
-
 
 #define MAX_PAYLOAD_SIZE 	64
 

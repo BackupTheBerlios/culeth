@@ -37,6 +37,40 @@
 #include "IP.h"
 #include "ICMP.h"
 #include "UDP.h"
+#include "config.h"
+#include <stdbool.h>
+
+
+void get_CULServer_IP(IP_Address_t* IPAddress) {
+	get_config_n(CFG_OFS_SIP, IPAddress->Octets, sizeof(IP_Address_t));
+}
+
+void set_CULServer_IP(IP_Address_t* IPAddress) {
+	set_config_n(CFG_OFS_SIP, IPAddress->Octets, sizeof(IP_Address_t));
+}
+
+void get_Target_IP(IP_Address_t* IPAddress) {
+	get_config_n(CFG_OFS_TIP, IPAddress->Octets, sizeof(IP_Address_t));
+}
+
+void set_Target_IP(IP_Address_t* IPAddress) {
+	set_config_n(CFG_OFS_TIP, IPAddress->Octets, sizeof(IP_Address_t));
+}
+
+
+bool isCULServerIPAddress(IP_Address_t* IPAddress) {
+	for(int i= 0; i< sizeof(IP_Address_t); i++) {
+		if(IPAddress->Octets[i]!=get_config_byte(CFG_OFS_SIP+i)) return false;
+	}
+	return true;
+}
+
+bool isBroadcastIPAddress(IP_Address_t* IPAddress) {
+	for(int i= 0; i< sizeof(IP_Address_t); i++) {
+		if(IPAddress->Octets[i]!=0xff) return false;
+	}
+	return true;
+}
 
 /** Processes an IP packet inside an Ethernet frame, and writes the appropriate response
  *  to the output Ethernet frame if one is created by a subprotocol handler.
@@ -59,8 +93,8 @@ int16_t IP_ProcessIPPacket(void* InDataStart, void* OutDataStart)
 	int16_t  RetSize = NO_RESPONSE;
 
 	/* Check to ensure the IP packet is addressed to the virtual webserver's IP or the broadcast IP address */
-	if (!(IP_COMPARE(&IPHeaderIN->DestinationAddress, &ServerIPAddress)) &&
-	    !(IP_COMPARE(&IPHeaderIN->DestinationAddress, &BroadcastIPAddress)))
+	if( !isCULServerIPAddress(&IPHeaderIN->DestinationAddress) &&
+	    !isBroadcastIPAddress(&IPHeaderIN->DestinationAddress))
 	{
 		return NO_RESPONSE;
 	}

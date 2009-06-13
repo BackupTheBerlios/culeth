@@ -40,15 +40,20 @@
 		#include <avr/io.h>
 		#include <string.h>
 
-		#include "EthernetProtocols.h"
 		#include "Ethernet.h"
+
+		/** Type define for a protocol IP address of a device on a network */
+		typedef struct {
+			uint8_t       Octets[4]; /**< Individual bytes of an IP address */
+		} IP_Address_t;
+
 
 	/* Macros: */
 		/** Protocol IP address of the host (client) machine, once assigned by DHCP */
 		// #define CLIENT_IP_ADDRESS                { 10,     0,    0,    1}
 
 		/** Protocol IP address of the virtual server machine */
-		#define SERVER_IP_ADDRESS                { 192, 168, 108, 127}
+		//#define SERVER_IP_ADDRESS                { 192, 168, 108, 127}
 
 		/** Protocol IP address of the broadcase address */
 		#define BROADCAST_IP_ADDRESS             {0xFF, 0xFF, 0xFF, 0xFF}
@@ -87,6 +92,10 @@
 		} IP_Header_t;
 
 	/* Function Prototypes: */
+		void get_CULServer_IP(IP_Address_t* IPAddress);
+		void set_CULServer_IP(IP_Address_t* IPAddress);
+		void get_Target_IP(IP_Address_t* IPAddress);
+		void set_Target_IP(IP_Address_t* IPAddress);
 		int16_t IP_ProcessIPPacket(void* InDataStart, void* OutDataStart);
 
 #endif

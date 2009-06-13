@@ -95,6 +95,7 @@ SRC = CULeth/$(TARGET).c                                          \
 	CULeth/RNDIS.c                                              \
 	CULeth/If_RNDIS.c					\
 	CULeth/If_CC1101.c					\
+	CULeth/MAC.c \
 	CULeth/Ethernet.c                                           \
 	CULeth/ARP.c                                                \
 	CULeth/ICMP.c                                               \

@@ -1,6 +1,7 @@
 #include "config.h"
 #include <avr/eeprom.h>
 #include <stdint.h>
+#include <avr/pgmspace.h>
 
 
 /*
@@ -27,24 +28,59 @@ uint16_t eeprom_r2(uint16_t addr) {
 	return eeprom_read_word((uint16_t*)addr);
 }
 
+/*
 __attribute__((__noinline__))
 void eeprom_wn(uint16_t addr, uint8_t *block, uint8_t size) {
-	eeprom_write_block(block, (uint16_t*)addr, size);
+	eeprom_write_block((uint16_t*)addr, block, size);
 }
 
 __attribute__((__noinline__))
 void eeprom_rn(uint16_t addr, uint8_t *block, uint8_t size) {
 	eeprom_read_block(block, (uint16_t*)addr, size);
 }
+*/
 
 /*
  * Configuration
  */
 
+// Defaults
+const PROGMEM prog_uint8_t target_ip[4]= {192,168,108,1};
+const PROGMEM prog_uint16_t target_port = 7073;
+const PROGMEM prog_uint8_t server_ip[4]= {192,168,108,127};
+const PROGMEM prog_uint16_t server_port = 7073;
+const PROGMEM prog_uint8_t server_mac[6]= {0x02, 0x50, 0x8b, 0x00, 0x00, 0x01};
+const PROGMEM prog_uint8_t adapter_mac[6]= {0x02, 0x00, 0x02, 0x00, 0x02, 0x00};
+
 void factory_reset() {
-	eeprom_w2(CFG_OFS_MAGIC, CFG_MAGIC);	// magic
-	eeprom_w2(CFG_OFS_VERSION, CFG_VERSION);// version
-	eeprom_w1(CFG_OFS_REQBL, CFG_NOREQBL);	// do not start bootloader
+	eeprom_w2(CFG_OFS_MAGIC, CFG_MAGIC);		// magic
+	eeprom_w2(CFG_OFS_VERSION, CFG_VERSION);	// version
+
+	// don't start bootloader
+	eeprom_w1(CFG_OFS_REQBL, CFG_NOREQBL);
+
+	// adapter MAC
+	for(int i= 0; i< 6; i++) {
+		eeprom_w1(CFG_OFS_AMAC+i, __LPM(adapter_mac+i));
+	}
+
+	// target IP and port
+	for(int i= 0; i< 4; i++) {
+		eeprom_w1(CFG_OFS_TIP+i, __LPM(target_ip+i));
+	}
+	eeprom_w2(CFG_OFS_TPORT, target_port);
+
+	// CULserver IP and port
+	for(int i= 0; i< 4; i++) {
+		eeprom_w1(CFG_OFS_SIP+i, __LPM(server_ip+i));
+	}
+	eeprom_w2(CFG_OFS_SPORT, server_port);
+
+	// CULserver MAC
+	for(int i= 0; i< 6; i++) {
+		eeprom_w1(CFG_OFS_SMAC+i, __LPM(server_mac+i));
+	}
+
 }
 
 void config_Init() {
@@ -58,11 +94,30 @@ void config_Init() {
 	if(version!=CFG_VERSION) factory_reset();
 }
 
-uint8_t	get_config(uint16_t config) {
+uint8_t	get_config_byte(uint16_t config) {
 	return eeprom_r1(config);
 }
 
-void set_config(uint16_t config, uint8_t value) {
+uint16_t get_config_word(uint16_t config) {
+	return eeprom_r2(config);
+}
+
+void get_config_n(uint16_t config, uint8_t *block, uint8_t size) {
+	for(uint8_t i= 0; i< size; i++) block[i]= eeprom_r1(config+i);
+	//return eeprom_rn(config, block, size);
+}
+
+void set_config_byte(uint16_t config, uint8_t value) {
 	eeprom_w1(config, value);
 }
+
+void set_config_word(uint16_t config, uint16_t value) {
+	eeprom_w2(config, value);
+}
+
+void set_config_n(uint16_t config, uint8_t *value, uint8_t size) {
+	for(uint8_t i= 0; i< size; i++) eeprom_w1(config+i, value[i]);
+	//eeprom_wn(config, value, size);
+}
+
 

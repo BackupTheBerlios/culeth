@@ -16,10 +16,11 @@ frames between a PC and CC11xx transceiver based devices such as Betty with Boop
 firmware (see http://www.bettyhacks.com).
 
 On USB, CUL appears on the host as an ethernet adapter with a proper IP address.
-The IP address is 192.168.108.1. This is the host's IP address.
+In standard configuration, the IP address is 192.168.108.1. This is the host's
+IP address.
 
 Packages from the host with a destination in the subnet 192.168.108.0/255.0.0.0
-pass through that interface and are transmitted to air. Packages from the air are
+pass through that interface and are transmitted to air. Packages from air are
 sent via the CUL interface to the host. CUL is completely agnostic of the higher
 level protocols used in the ethernet frames it passes from Betty to host hither
 and yon.
@@ -27,9 +28,7 @@ and yon.
 CULeth simulates a simple host (CULServer) with the following features:
 - answer ARP requests
 - support ICMP ping echos
-- reply to UDP requests on port 7073
-
-A command set for testing CULeth is implemented in the CULServer.
+- reply to UDP requests on port 7073 for testing, monitoring, configuring CUL
 
 
 +-----------+             +--------------------+      +----------------+
@@ -91,40 +90,97 @@ usb 1-9: Manufacturer: busware.de
 
 
 
-Usage of CULeth
-===============
-
 Interface setup
----------------
+===============
 
 ifconfig usb0 192.168.108.1 up
 ping 192.168.108.127
+
+This configures CUL as a host interface with IP address 192.168.108.1 and sets
+a default route to 192.168.108.0/24 via usb0. The ping command pings the
+CULServer built into CULeth.
 
 Packet sniffing:
 tcpdump -e -i usb0 -n -U -v -s 200 -X
 
 
-CULserver communication
------------------------
+CULServer communication
+=======================
 
-Use tools/udp.pl to talk to the CULserver. The user interface is self-explanatory.
+CULServer configuration tool cstool
+-----------------------------------
 
-Use tools/server.pl to listen to incoming requests from the CULserver on the
+Use tools/cstool.pl to talk to the CULServer. The user interface is
+self-explanatory. The command ? will give you the following menu:
+
+CUL functions:
+  B - start bootloader
+  r - reboot
+RNDIS functions:
+  A - set adapter MAC address
+CULServer functions:
+  M - set CULServer MAC address
+  S - set CULServer IP address and port
+  T - set target IP address and port
+  e - get EEPROM data
+  E - EEPROM factory reset
+  b - blink
+ pa - send test packet on air
+ pt - send test packet to target
+CC1101 functions:
+  s - get CC1101 status
+  c - get CC1101 configuration
+Miscellaneous functions:
+  t - get CULServer time
+  x - exit
+
+cstool connects to a CULServer on port 7072 at IP address 192.168.108.127.
+If your CULServer is on another IP address or port, start cstool with
+
+cstool [remotehost[:remoteport]]
+
+Examples: 	cstool 192.168.109.127
+		cstool 192.168.111.111:1111
+
+
+Target
+------
+
+CULeth sends packets from air to a configurable target. In the default
+configuration this is port 7073 on IP address 192.168.108.1, i.e. the host.
+
+Use tools/target.pl to listen to incoming requests from the CULServer on the
 host.
 
-The (8) test feature sends a test message to the host (4 bytes time stamp first).
-Every packet that runs through the hub sends a notice to the host (4 bytes time
-stamp followed by the number of the source and destination interfaces, see
-Interfaces.h).
+If port 7073 is busy you can configure CULServer to forward UDP packets to
+another port on the target. In this case start target with
+
+target [port]
+
+Examples:	target 4711
+		target 10000
 
 
+The pt test feature of CULServer sends a test message to the host (4 bytes time
+stamp first). Every packet that runs through the hub sends a notice to the host
+(4 bytes time stamp followed by the number of the source and destination
+interfaces, see Interfaces.h).
 
-Listening to CULeth
-===================
 
-See http://developer.berlios.de/projects/culfw/ for detail on culfw!
+Sniffing CULeth communication
+=============================
 
-Use a second CUL and put culfw on it. Try the following commands:
+See http://developer.berlios.de/projects/culfw/ for details on culfw!
+
+Use a second CUL and put culfw on it. Plug it into the USB port. A device
+
+	/dev/ttyACM0
+
+should appear. Type
+
+	screen /dev/ttyACM0
+
+to communicate with culfw. Try the following commands:
 
 (1) tune CUL to 433.249 MHz:
 W0F10
@@ -133,13 +189,72 @@ W11D6
 
 Fcarrier= Value * 26MHz/65536 => 433.249 MHz corresponds to 10A9D6
 
-unplug/plug CUL to activate the setting!
+IMPORTANT: unplug/plug CUL to activate the setting!
 
 (2) listen
 X09
 
+The pa test feature of CULServer sends a test message on air. The test message
+can be seen by culfw.
 
 
+Two-way communication
+=====================
+
+You need two CUL. Flash culeth on the two of them, in the following called
+CUL-A and CUL-B. CUL-A is left a its default configuration. CUL-B is
+configured to use an alternate subnet.
+
+Configuring CUL-A and CUL-B
+---------------------------
+
+Unplug both.
+
+CUL-A is left in its default configuration:
+- Adapter MAC address 02:00:02:00:02:00
+- CULServer MAC address 02:50:8b:00:00:01
+- CULServer at 192.168.108.127:7073
+- Target at 192.168.108.1:7073
+
+There is nothing to do with CUL-A.
+
+CUL-B needs to be tweaked to use the following configuration:
+- Adapter MAC address 02:00:02:00:02:FF
+- CULServer MAC address 02:50:8b:00:00:FF
+- CULServer at 192.168.109.127:7073
+- Target at 192.168.109.1:7074
+
+Plug CUL-B. A device usb0 should appear on the host. Configure it with
+
+ifconfig usb0 192.168.108.1 up
+
+Run cstool to set new adapter MAC address. Unplug/replug. ifconfig usb0 192.168.108.1 up
+Run cstool to set new CULServer MAC address. Unplug/replug. ifconfig usb0 192.168.108.1 up
+Run cstool to set new CULServer IP address and port. ifconfig usb0 192.168.109.1 up (sic!)
+Run cstool 192.168.109.127 to set new Target IP address and port.
+
+Unplug CUL-B. CUL-B is now configured.
+
+Test setup
+----------
+
+Open 4 terminals.
+
+Plug CUL-A. ifconfig usb0 192.168.108.1 up. Run cstool in terminal 1. Run
+target in terminal 2. Check wether you can send test packets to the target in
+terminal 2 by means of the CULServer command pt.
+
+Plug CUL-B. ifconfig usb1 192.168.109.1 up. Run cstool 192.168.109.127 in
+terminal 3. Run target 7073 in terminal 4. Check wether you can send test packets
+to the target in terminal 4 by means of the CULServer command pt.
+
+IMPORTANT NOTICE: as reception is not yet functional, the following does not work:
+
+You should now be able to send packets on air from CUL-A to CUL-B and vice versa.
+Use the CULServer command pa. A packet transmitted from CUL-A is received by
+CUL-B, wrapped into an UDP packet and forwarded to port 7074. A packet transmitted
+from CUL-B is received by CUL-A, wrapped into an UDP packet and forwarded to port
+7073.
 
 
 CULeth internals
@@ -155,14 +270,6 @@ outgoing, can be handled.
 
 If a message passing through the hub triggers an extra packet to be sent out,
 then this is done in extras.c.
-
-
-RNDIS.h		ADAPTER_MAC_ADDRESS	HWaddr 02:00:02:00:02:00 (reverse notation!)
-Ethernet.h	SERVER_MAC_ADDRESS	HWAddr 01:00:01:00:01:00 (reverse notation!)
-IP.h		SERVER_IP_ADDRESS	192.168.108.127
-
-
-
 
 
 Tips & Tricks
