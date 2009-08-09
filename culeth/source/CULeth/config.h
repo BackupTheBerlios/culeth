@@ -8,7 +8,7 @@
  */
 
 #define CFG_MAGIC		(uint16_t)0x1969	// eeprom magic
-#define CFG_VERSION		(uint16_t)0x0002	// config version
+#define CFG_VERSION		(uint16_t)0x0003	// config version
 #define CFG_REQBL		0xb0			// request bootloader
 #define CFG_NOREQBL		0x00			// do not request bootloader
 
@@ -35,7 +35,7 @@
 #define CFG_OFS_MAGIC		0x1fe	// 1fe, 1ff
 
 
-void factory_reset(void);
+void factory_reset(uint8_t cfg);
 void config_Init(void);
 
 uint8_t	get_config_byte(uint16_t config);

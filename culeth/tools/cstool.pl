@@ -5,8 +5,8 @@ use IO::Socket;
 
 ###############################################################################
 
-my $REMOTEHOST	= '192.168.108.127';
-my $REMOTEPORT	= 7073;
+my $REMOTEHOST	= '192.168.108.101';
+my $REMOTEPORT	= 49152;
 my $VERBOSE	= 1;
 
 ###############################################################################
@@ -28,7 +28,8 @@ my $OP_TESTPACKETONAIR		= 'a';
 my $OP_TESTPACKETTOTARGET	= 'p';
 my $OP_BOOTLOADER		= '>';
 my $OP_GETEEPROMDATA		= 'e';
-my $OP_EEPROMFACTORYRESET	= 'E';
+my $OP_EEPROMFACTORYRESET1	= 'E';
+my $OP_EEPROMFACTORYRESET2	= 'F';
 my $OP_REBOOT			= '0';
 my $OP_SETADAPTERMACADDRESS 	= 'A';
 my $OP_SETCULSERVERMACADDRESS 	= 'M';
@@ -201,7 +202,8 @@ my %functions= (
 	"S" => "set_CULServer_IP_address_and_port",
 	"T" => "set_target_IP_address_and_port",
 	"e" => "get_eeprom_data",
-	"E" => "eeprom_factory_reset",
+	"E1" => "eeprom_factory_reset1",
+	"E2" => "eeprom_factory_reset2",
 	"s" => "get_CC1101_status",
 	"c" => "get_CC1101_configuration",
 	"pa" => "send_test_packet_on_air",
@@ -271,7 +273,8 @@ sub show_menu() {
 	print "  S - set CULServer IP address and port\n";
 	print "  T - set target IP address and port\n";
 	print "  e - get EEPROM data\n";
-	print "  E - EEPROM factory reset\n";
+	print " E1 - EEPROM factory reset (config #1)\n";
+	print " E2 - EEPROM factory reset (config #2)\n";
 	print "  b - blink\n";
 	print " pa - send test packet on air\n";
 	print " pt - send test packet to target\n";
@@ -355,9 +358,18 @@ sub set_target_IP_address_and_port() {
 	my ($rc, $text, @b)= CULServer_sendrequest($OP_SETTARGETIPPORT, $IP . $port);
 }
 
-sub eeprom_factory_reset() {
+sub eeprom_factory_reset1() {
 
-	my ($rc, $text, @b)= CULServer_sendrequest($OP_EEPROMFACTORYRESET, "");
+	my ($rc, $text, @b)= CULServer_sendrequest($OP_EEPROMFACTORYRESET1, "");
+	if($rc) {
+		print "Device will reboot.\n";
+		exit 0;
+	}
+}
+
+sub eeprom_factory_reset2() {
+
+	my ($rc, $text, @b)= CULServer_sendrequest($OP_EEPROMFACTORYRESET2, "");
 	if($rc) {
 		print "Device will reboot.\n";
 		exit 0;
@@ -370,6 +382,12 @@ sub get_eeprom_data() {
 
 	print "EEPROM data:\n";
 	printbuffer($text);
+
+	printf("Adapter MAC     = %02x:%02x:%02x:%02x:%02x:%02x\n", $b[18],$b[19],$b[20],$b[21],$b[22],$b[23]);
+	printf("Server MAC      = %02x:%02x:%02x:%02x:%02x:%02x\n", $b[12],$b[13],$b[14],$b[15],$b[16],$b[17]);
+	printf("Server IP:port  = %d.%d.%d.%d:%d\n", $b[6],$b[7],$b[8],$b[9],$b[10]+256*$b[11]);
+	printf("Target IP:port  = %d.%d.%d.%d:%d\n", $b[0],$b[1],$b[2],$b[3],$b[4]+256*$b[5]);
+	printf("\n");
 
 }
 

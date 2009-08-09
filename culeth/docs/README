@@ -40,14 +40,14 @@ CULeth simulates a simple host (CULServer) with the following features:
                                      |
                                 +----+----------+
                                 |  CULServer    |
-                                |192.168.108.127|
+                                |192.168.108.101|
                                 |               |
                                 +---------------+
 
 
 ***** IMPORTANT NOTICE: the current version of CULeth wraps packages received
-on air into UDP packets and sends them to port 7073 on host 192.168.108.1. They
-packets can be monitored by means of the tools/server.pl (see below).
+on air into UDP packets and sends them to port 2211 on host 192.168.108.1. They
+packets can be monitored by means of the tools/target.pl (see below).
 
 
 CULeth is a derivative of the RNDISEthernet demo from LUFA (see
@@ -82,7 +82,7 @@ usb 1-9: new full speed USB device using ohci_hcd and address 98
 usb 1-9: configuration #1 chosen from 1 choice
 rndis_host 1-9:1.0: dev can't take 144 byte packets (max 144), adjusting MTU to 86
 rndis_host 1-9:1.0: RNDIS_MSG_QUERY(0x00010202) failed, -47
-usb0: register 'rndis_host' at usb-0000:00:0b.0-9, RNDIS device, 02:00:02:00:02:00
+usb0: register 'rndis_host' at usb-0000:00:0b.0-9, RNDIS device, 02:00:02:00:02:01
 usb 1-9: New USB device found, idVendor=03eb, idProduct=204c
 usb 1-9: New USB device strings: Mfr=1, Product=2, SerialNumber=0
 usb 1-9: Product: CULeth RNDIS CDC
@@ -94,7 +94,7 @@ Interface setup
 ===============
 
 ifconfig usb0 192.168.108.1 up
-ping 192.168.108.127
+ping 192.168.108.101
 
 This configures CUL as a host interface with IP address 192.168.108.1 and sets
 a default route to 192.168.108.0/24 via usb0. The ping command pings the
@@ -123,7 +123,8 @@ CULServer functions:
   S - set CULServer IP address and port
   T - set target IP address and port
   e - get EEPROM data
-  E - EEPROM factory reset
+ E1 - EEPROM factory reset (config #1)
+ E2 - EEPROM factory reset (config #2)
   b - blink
  pa - send test packet on air
  pt - send test packet to target
@@ -134,7 +135,7 @@ Miscellaneous functions:
   t - get CULServer time
   x - exit
 
-cstool connects to a CULServer on port 7072 at IP address 192.168.108.127.
+cstool connects to a CULServer on port 49152 at IP address 192.168.108.101.
 If your CULServer is on another IP address or port, start cstool with
 
 cstool [remotehost[:remoteport]]
@@ -142,17 +143,33 @@ cstool [remotehost[:remoteport]]
 Examples: 	cstool 192.168.109.127
 		cstool 192.168.111.111:1111
 
+The default configurations, which can be set by E1 or E2, are as follows:
+
+config #1:
+Adapter MAC     = 02:00:02:00:02:01
+Server MAC      = 02:50:8b:00:00:01
+Server IP:port  = 192.168.108.101:49152
+Target IP:port  = 192.168.108.1:2211
+
+config #2:
+Adapter MAC     = 02:00:02:00:02:02
+Server MAC      = 02:50:8b:00:00:02
+Server IP:port  = 192.168.108.102:49152
+Target IP:port  = 192.168.108.1:2212
+
+After having started the bootloader with B or after a version change in the
+configuration, config #1 is active.
 
 Target
 ------
 
 CULeth sends packets from air to a configurable target. In the default
-configuration this is port 7073 on IP address 192.168.108.1, i.e. the host.
+configuration this is port 2211 on IP address 192.168.108.1, i.e. the host.
 
 Use tools/target.pl to listen to incoming requests from the CULServer on the
 host.
 
-If port 7073 is busy you can configure CULServer to forward UDP packets to
+If port 2211 is busy you can configure CULServer to forward UDP packets to
 another port on the target. In this case start target with
 
 target [port]
@@ -211,29 +228,35 @@ Configuring CUL-A and CUL-B
 Unplug both.
 
 CUL-A is left in its default configuration:
-- Adapter MAC address 02:00:02:00:02:00
-- CULServer MAC address 02:50:8b:00:00:01
-- CULServer at 192.168.108.127:7073
-- Target at 192.168.108.1:7073
+- Adapter MAC     = 02:00:02:00:02:01
+- Server MAC      = 02:50:8b:00:00:01
+- Server IP:port  = 192.168.108.101:49152
+- Target IP:port  = 192.168.108.1:2211
 
 There is nothing to do with CUL-A.
 
 CUL-B needs to be tweaked to use the following configuration:
-- Adapter MAC address 02:00:02:00:02:FF
-- CULServer MAC address 02:50:8b:00:00:FF
-- CULServer at 192.168.109.127:7073
-- Target at 192.168.109.1:7074
+- Adapter MAC     = 02:00:02:00:02:02
+- Server MAC      = 02:50:8b:00:00:02
+- Server IP:port  = 192.168.108.102:49152
+- Target IP:port  = 192.168.108.1:2212
 
 Plug CUL-B. A device usb0 should appear on the host. Configure it with
 
 ifconfig usb0 192.168.108.1 up
 
-Run cstool to set new adapter MAC address. Unplug/replug. ifconfig usb0 192.168.108.1 up
-Run cstool to set new CULServer MAC address. Unplug/replug. ifconfig usb0 192.168.108.1 up
-Run cstool to set new CULServer IP address and port. ifconfig usb0 192.168.109.1 up (sic!)
-Run cstool 192.168.109.127 to set new Target IP address and port.
+Run cstool to set config #2 with E2. Unplug CUL-B. CUL-B is now configured.
 
-Unplug CUL-B. CUL-B is now configured.
+Plug CUL-A. Configure it with
+
+ifconfig usb0 192.168.108.1 up
+
+Plug CUL-B. Configure it with
+
+ifconfig usb1 192.168.108.2 up
+
+You can now talk to CUL-A with cstool and to CUL-B with cstool 192.168.108.2
+
 
 Test setup
 ----------
@@ -241,20 +264,20 @@ Test setup
 Open 4 terminals.
 
 Plug CUL-A. ifconfig usb0 192.168.108.1 up. Run cstool in terminal 1. Run
-target in terminal 2. Check wether you can send test packets to the target in
+target 2211 in terminal 2. Check wether you can send test packets to the target in
 terminal 2 by means of the CULServer command pt.
 
 Plug CUL-B. ifconfig usb1 192.168.109.1 up. Run cstool 192.168.109.127 in
-terminal 3. Run target 7073 in terminal 4. Check wether you can send test packets
+terminal 3. Run target 2212 in terminal 4. Check wether you can send test packets
 to the target in terminal 4 by means of the CULServer command pt.
 
 IMPORTANT NOTICE: as reception is not yet functional, the following does not work:
 
 You should now be able to send packets on air from CUL-A to CUL-B and vice versa.
 Use the CULServer command pa. A packet transmitted from CUL-A is received by
-CUL-B, wrapped into an UDP packet and forwarded to port 7074. A packet transmitted
+CUL-B, wrapped into an UDP packet and forwarded to port 2212. A packet transmitted
 from CUL-B is received by CUL-A, wrapped into an UDP packet and forwarded to port
-7073.
+2211.
 
 
 CULeth internals

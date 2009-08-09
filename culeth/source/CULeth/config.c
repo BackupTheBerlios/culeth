@@ -45,14 +45,17 @@ void eeprom_rn(uint16_t addr, uint8_t *block, uint8_t size) {
  */
 
 // Defaults
-const PROGMEM prog_uint8_t target_ip[4]= {192,168,108,1};
-const PROGMEM prog_uint16_t target_port = 7073;
-const PROGMEM prog_uint8_t server_ip[4]= {192,168,108,127};
-const PROGMEM prog_uint16_t server_port = 7073;
-const PROGMEM prog_uint8_t server_mac[6]= {0x02, 0x50, 0x8b, 0x00, 0x00, 0x01};
-const PROGMEM prog_uint8_t adapter_mac[6]= {0x02, 0x00, 0x02, 0x00, 0x02, 0x00};
+const PROGMEM prog_uint8_t target_ip[2][4]= {{192,168,108,1},{192,168,108,1}};
+const PROGMEM prog_uint16_t target_port0= 2211;
+const PROGMEM prog_uint16_t target_port1= 2212;
+const PROGMEM prog_uint8_t server_ip[2][4]= {{192,168,108,101},{192,168,108,102}};
+const PROGMEM prog_uint16_t server_port = 49152;
+const PROGMEM prog_uint8_t server_mac[2][6]= {{0x02, 0x50, 0x8b, 0x00, 0x00, 0x01},
+					      {0x02, 0x50, 0x8b, 0x00, 0x00, 0x02}};
+const PROGMEM prog_uint8_t adapter_mac[2][6]= {{0x02, 0x00, 0x02, 0x00, 0x02, 0x01},
+					       {0x02, 0x00, 0x02, 0x00, 0x02, 0x02}};
 
-void factory_reset() {
+void factory_reset(uint8_t cfg) {
 	eeprom_w2(CFG_OFS_MAGIC, CFG_MAGIC);		// magic
 	eeprom_w2(CFG_OFS_VERSION, CFG_VERSION);	// version
 
@@ -61,24 +64,28 @@ void factory_reset() {
 
 	// adapter MAC
 	for(int i= 0; i< 6; i++) {
-		eeprom_w1(CFG_OFS_AMAC+i, __LPM(adapter_mac+i));
+		eeprom_w1(CFG_OFS_AMAC+i, __LPM(adapter_mac[cfg]+i));
 	}
 
 	// target IP and port
 	for(int i= 0; i< 4; i++) {
-		eeprom_w1(CFG_OFS_TIP+i, __LPM(target_ip+i));
+		eeprom_w1(CFG_OFS_TIP+i, __LPM(target_ip[cfg]+i));
 	}
-	eeprom_w2(CFG_OFS_TPORT, target_port);
+	if(cfg) {
+		eeprom_w2(CFG_OFS_TPORT, target_port1);
+	} else {
+		eeprom_w2(CFG_OFS_TPORT, target_port0);
+	}
 
 	// CULserver IP and port
 	for(int i= 0; i< 4; i++) {
-		eeprom_w1(CFG_OFS_SIP+i, __LPM(server_ip+i));
+		eeprom_w1(CFG_OFS_SIP+i, __LPM(server_ip[cfg]+i));
 	}
 	eeprom_w2(CFG_OFS_SPORT, server_port);
 
 	// CULserver MAC
 	for(int i= 0; i< 6; i++) {
-		eeprom_w1(CFG_OFS_SMAC+i, __LPM(server_mac+i));
+		eeprom_w1(CFG_OFS_SMAC+i, __LPM(server_mac[cfg]+i));
 	}
 
 }
@@ -89,9 +96,9 @@ void config_Init() {
 	uint16_t version;
 
 	magic= eeprom_r2(CFG_OFS_MAGIC);
-	if(magic!=CFG_MAGIC) factory_reset();
+	if(magic!=CFG_MAGIC) factory_reset(0);
 	version= eeprom_r2(CFG_OFS_VERSION);
-	if(version!=CFG_VERSION) factory_reset();
+	if(version!=CFG_VERSION) factory_reset(0);
 }
 
 uint8_t	get_config_byte(uint16_t config) {

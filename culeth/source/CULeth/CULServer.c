@@ -94,9 +94,14 @@ int16_t CULServer_ProcessPacket(void* IPHeaderInStart, void* CULServerRequestSta
 			for(int i= 0; i< Reply->Length; i++)
 				Reply->Result[i]= get_config_byte(CFG_START+i);
 			break;
-		case CULSERVER_OP_EEPROMRESET:
+		case CULSERVER_OP_EEPROMRESET1:
 			Reply->Length= 0;
-			factory_reset();
+			factory_reset(0);
+			extraflag= EXTRA_REBOOT;
+			break;
+		case CULSERVER_OP_EEPROMRESET2:
+			Reply->Length= 0;
+			factory_reset(1);
 			extraflag= EXTRA_REBOOT;
 			break;
 		case CULSERVER_OP_SETTARGETIPPORT:
